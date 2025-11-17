@@ -7,6 +7,13 @@ watchdog_interval_minutes: 30
 copilot:
   command_palette_action: "GitHub Copilot Chat: Focus on Chat View"
   busy_min_age_sec: 10
+llm:
+  provider: "z.ai"
+  model: "glm-4.6"
+  api_key_env: "ZAI_API_KEY"  # Set this environment variable with your Z.ai API key
+  api_base: "https://api.z.ai/api/coding/paas/v4/"
+  temperature: 0.95
+  max_tokens: 131072
 adapters:
   type: "mcp"  # "mcp" or "fallback"
   mcp:
