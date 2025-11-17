@@ -26,7 +26,8 @@ dependencies = [
     "opentelemetry-sdk>=1.25.0",
     "opentelemetry-exporter-otlp>=1.25.0",
     "pyperclip>=1.8.2",
-    "Pillow>=10.2.0"
+    "Pillow>=10.2.0",
+    "mcp>=1.21.0"
 ]
 
 [project.optional-dependencies]
@@ -38,3 +39,4 @@ fallback = [
 [project.scripts]
 agent-cli = "agent.main:cli"
 agent-watchdog = "agent.scripts.run_watchdog:main"
+ 
