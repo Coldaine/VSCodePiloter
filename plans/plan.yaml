@@ -1,0 +1,13 @@
+
+objectives:
+  - id: repo-pr-hygiene
+    description: Keep PRs clean & merged per policy
+    cadence: "PT2H"
+tasks:
+  - id: review-open-prs
+    repo_selector: "all"
+    policy: "label:needs-review, stale>3d"
+    actions: [summarize, request-changes, merge-if-green]
+  - id: nudge-copilot
+    repo_selector: "all"
+    actions: [ask-plan, ask-blockers, confirm-alignment]

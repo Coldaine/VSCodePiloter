@@ -1,0 +1,38 @@
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "langgraph-vscode-multiagent"
+version = "0.1.0"
+description = "LangGraph-based Reasoner + Vision Actor that manages multiple VS Code windows on Windows 11 using pluggable MCP adapters."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{name = "Your Team"}]
+dependencies = [
+    "langgraph>=0.2.0",
+    "langchain>=0.2.0",
+    "pydantic>=2.6.0",
+    "pyyaml>=6.0.1",
+    "tenacity>=8.2.3",
+    "requests>=2.32.0",
+    "rich>=13.7.0",
+    "colorama>=0.4.6",
+    "psutil>=5.9.8",
+    "python-dotenv>=1.0.1",
+    "opentelemetry-sdk>=1.25.0",
+    "opentelemetry-exporter-otlp>=1.25.0",
+    "pyperclip>=1.8.2",
+    "Pillow>=10.2.0"
+]
+
+[project.optional-dependencies]
+# Optional: basic local automation fallback (not default). Avoid if you only want MCP-based control.
+fallback = [
+    "pyautogui>=0.9.54"
+]
+
+[project.scripts]
+agent-cli = "agent.main:cli"
+agent-watchdog = "agent.scripts.run_watchdog:main"

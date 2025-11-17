@@ -1,0 +1,22 @@
+
+repos_root: "C:\\work\\repos"
+write_mode: false          # if false, no keystrokes/typing are sent; screenshots and reports only
+window_title_regex: ".*Visual Studio Code.*"
+checkpoint_db: "state/checkpoints/graph.sqlite"
+watchdog_interval_minutes: 30
+copilot:
+  command_palette_action: "GitHub Copilot Chat: Focus on Chat View"
+  busy_min_age_sec: 10
+adapters:
+  type: "mcp"  # "mcp" or "fallback"
+  mcp:
+    base_url: "http://127.0.0.1:43110"
+    jsonrpc: false
+    endpoints:
+      list_windows: "/windows/list"
+      focus_window: "/windows/focus"
+      screenshot: "/windows/screenshot"
+      keypress: "/input/keypress"
+      text_input: "/input/text"
+      clipboard_get: "/clipboard/get"
+      clipboard_set: "/clipboard/set"
