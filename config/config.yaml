@@ -9,9 +9,9 @@ copilot:
   busy_min_age_sec: 10
 llm:
   provider: "z.ai"
-  # Text model for reasoning (GLM-4.6 for coding)
+  # Text model for reasoning (GLM-4.6 flagship - 355B/32B active, coding-optimized)
   model: "glm-4.6"
-  # Vision model for screenshot analysis (GLM-4.5V flagship)
+  # Vision model for screenshot analysis (GLM-4.5V - 106B/12B active, multimodal)
   vision_model: "glm-4.5v"
   api_key_env: "ZAI_API_KEY"  # Set this environment variable with your Z.ai API key
 
@@ -22,7 +22,7 @@ llm:
   api_base_standard: "https://api.z.ai/api/paas/v4/"
 
   temperature: 0.95
-  max_tokens: 131072
+  max_tokens: 200000  # GLM-4.6 context window (200K tokens; GLM-4.5V has 64K-66K for multimodal)
   # Vision-specific settings
   vision:
     enabled: true

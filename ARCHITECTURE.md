@@ -17,14 +17,17 @@
 ### LLM Architecture
 
 **Text Model (Reasoning)**: Z.ai GLM-4.6
+- Model: 355B total parameters (MoE), 32B active parameters
 - Analyzes repository health (branches, PRs, activity)
 - Intelligently prioritizes tasks based on team context
 - Generates contextual messages for Copilot Chat
 - Temperature: 0.7 (deterministic reasoning)
 - Endpoint: `https://api.z.ai/api/coding/paas/v4/` (coding plan subscription)
 - Context: 200K tokens
+- Streaming: Enabled
 
 **Vision Model (Screenshot Analysis)**: Z.ai GLM-4.5V
+- Model: 106B total parameters (MoE), 12B active parameters
 - Analyzes VS Code window screenshots
 - Validates Copilot Chat state (open/busy/responsive)
 - Verifies action completion
@@ -32,6 +35,7 @@
 - Temperature: 0.95 (creative interpretation)
 - Endpoint: `https://api.z.ai/api/paas/v4/` (standard API, pay-as-you-go)
 - Context: 64K-66K multimodal tokens
+- Streaming: Disabled
 - **CRITICAL**: Vision models do NOT work with coding endpoint
 
 **Secret Management**: Auto-detecting composite provider

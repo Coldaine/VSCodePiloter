@@ -44,7 +44,7 @@ class LLMConfig(BaseModel):
     )
 
     temperature: float = Field(0.95, description="Temperature for sampling")
-    max_tokens: int = Field(131072, description="Maximum context tokens")
+    max_tokens: int = Field(200000, description="Maximum context tokens (GLM-4.6: 200K, GLM-4.5V: 64K-66K)")
     vision: VisionConfig = Field(default_factory=VisionConfig, description="Vision-specific settings")
 
     def __init__(self, **data):
