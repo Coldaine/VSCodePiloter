@@ -17,10 +17,9 @@
 ### 1) Requirements
 - Windows 11, Python 3.11+
 - Git + GitHub CLI (`gh`) installed and on PATH
-- A desktop automation **MCP server** reachable locally (HTTP/JSON or JSON-RPC over HTTP).  
-  You can map its endpoints in `config/config.yaml` under `adapters.mcp.endpoints`.
+- (Optional) Windows-MCP or similar MCP server for advanced features
 
-> **Note**: This repo ships with a thin MCP HTTP adapter. If your server speaks stdio/WebSocket, lift the `mcp/client.py` to the right transport or drop in your own adapter with the same interface. An optional **local fallback** using `pyautogui` exists (off by default).
+> **Note**: By default, uses the **fallback adapter** (`pyautogui` + `win32`) for direct Windows automation. For advanced MCP features like state detection and UI element analysis, install [Windows-MCP](https://github.com/CursorTouch/Windows-MCP) and integrate via the `vscode_copilot_monitor` tool.
 
 ### 2) Install
 
@@ -113,26 +112,33 @@ tests/
 
 ---
 
-## Configure MCP (HTTP) Adapter
+## Configure Desktop Automation
 
 In `config/config.yaml`:
 
 ```yaml
 adapters:
-  type: "mcp"
-  mcp:
-    base_url: "http://127.0.0.1:43110"
-    endpoints:
-      list_windows: "/windows/list"
-      focus_window: "/windows/focus"
-      screenshot: "/windows/screenshot"
-      keypress: "/input/keypress"
-      text_input: "/input/text"
-      clipboard_get: "/clipboard/get"
-      clipboard_set: "/clipboard/set"
+  type: "fallback"  # Uses pyautogui + win32 for direct automation
 ```
 
-> Adjust endpoints to match your server. The adapter posts JSON like `{"keys": "Ctrl+Shift+P"}` or `{"hwnd": 12345}` and expects JSON replies. If your server is JSON-RPC, set `jsonrpc: true` in the same block and the adapter will wrap calls automatically.
+### Using Windows-MCP for Advanced Features
+
+For sophisticated Windows automation (UI element detection, state management, etc.), use the `vscode_copilot_monitor` tool which integrates with [Windows-MCP](https://github.com/CursorTouch/Windows-MCP):
+
+```bash
+# Install Windows-MCP
+git clone https://github.com/CursorTouch/Windows-MCP.git C:/Users/YOUR_USER/Windows-MCP
+
+# Configure as MCP server
+claude mcp add windows-mcp stdio "uv --directory C:/Users/YOUR_USER/Windows-MCP run main.py" --scope user
+
+# Use in your code
+from agent.tools.vscode_copilot_monitor import VSCodeCopilotMonitor
+monitor = VSCodeCopilotMonitor()
+results = await monitor.connect()
+```
+
+> **Philosophy**: Reuse existing MCP servers instead of building custom ones. Windows-MCP provides 15+ mature tools for Windows automation.
 
 ---
 

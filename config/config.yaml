@@ -29,7 +29,10 @@ llm:
     max_image_size: 2048  # Max dimension for images before resizing
     detail: "high"  # OpenAI-compatible: "low", "high", or "auto"
 adapters:
-  type: "mcp"  # "mcp" or "fallback"
+  type: "fallback"  # "mcp" or "fallback"
+  # Using fallback adapter (pyautogui + win32) for direct Windows automation
+  # Removed custom MCP server - violated project's "reuse, don't rebuild" principle
+  # For advanced MCP features, use Windows-MCP tools via vscode_copilot_monitor
   mcp:
     base_url: "http://127.0.0.1:43110"
     jsonrpc: false
