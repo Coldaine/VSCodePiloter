@@ -264,12 +264,19 @@ class VSCodeCopilotMonitor:
 
         for attempt in range(retries):
             try:
-                # State-Tool returns plain text, not JSON
+                # State-Tool may return JSON or plain text
                 result = await self.win_session.call_tool("State-Tool", {})
                 text = self._extract_text(result)
                 if not text:
                     return {}
-                # Parse the structured text format
+                # First, try JSON
+                try:
+                    parsed = json.loads(text)
+                    if isinstance(parsed, dict):
+                        return parsed
+                except Exception:
+                    pass
+                # Fallback: parse structured plain text
                 return parse_state_tool_text(text)
             except Exception as exc:
                 if attempt == retries - 1:
