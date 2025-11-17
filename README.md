@@ -17,9 +17,9 @@
 ### 1) Requirements
 - Windows 11, Python 3.11+
 - Git + GitHub CLI (`gh`) installed and on PATH
-- A Windows desktop automation **MCP server** (e.g., mcp-control, Windows-MCP)
+- A Windows desktop automation **MCP server** (Windows-MCP recommended)
   - If you have Claude Desktop installed, the system will automatically use MCP servers from its config
-  - Otherwise, it will use `npx -y mcp-control` as a fallback
+  - Otherwise, it will use `npx -y @curtsortouch/windows-mcp` as a fallback
   - Or configure your own in `config/config.yaml` under `adapters.mcp`
 
 > **Note**: This repo uses stdio transport (standard MCP protocol) by default. An optional **local fallback** using `pyautogui` exists (set `adapters.type: "fallback"`).
@@ -101,6 +101,7 @@ agent/
   tools/
     git_ops.py
     gh_ops.py
+    vscode_copilot_monitor.py  # High-level Windows-MCP wrapper
 config/
   config.yaml
 plans/

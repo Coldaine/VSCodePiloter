@@ -60,9 +60,11 @@
 
 1. **End-to-end VS Code interaction** - Full Copilot Chat cycle with real windows
 2. **Multi-window orchestration** - Correct window selection from 3+ instances
-3. **Error recovery flow** - Intentional failures triggering Recovery node
-4. **LLM reasoning validation** - Complex plans with priority-based selection
-5. **Watchdog resumption** - Automatic restart after interruption
+3. **VSCodeCopilotMonitor integration** - Real Windows-MCP session scanning multiple VS Code windows, detecting busy states, capturing transcripts
+4. **Error recovery flow** - Intentional failures triggering Recovery node
+5. **LLM reasoning validation** - Complex plans with priority-based selection
+6. **Watchdog resumption** - Automatic restart after interruption
+7. **Stdio MCP adapter** - Launch Windows-MCP subprocess, verify JSON-RPC communication, confirm tool calls work
 
 ### Performance Benchmarks (Real-World Required)
 - Window focus: <500ms
@@ -77,7 +79,8 @@ This system implements a multi-agent LangGraph orchestration for supervising, dr
 ## High-Level Components
 - **Reasoner Agent**: Maintains long-term intent, selects task envelopes, coordinates repo and plan state.
 - **Vision Actor Agent**: Executes GUI automation via MCP; fresh context each invocation.
-- **MCP Desktop Adapter**: Thin HTTP/JSON-RPC translation layer to Windows automation servers.
+- **MCP Desktop Adapter**: Stdio or HTTP transport layer to Windows automation servers (Windows-MCP).
+- **VSCodeCopilotMonitor**: High-level wrapper around Windows-MCP for monitoring VS Code Copilot Chat across multiple windows, tracking transcripts, and detecting busy states.
 - **LangGraph Application**:
   - Nodes: ScanRepos → SyncPlan → ReasonStep → ActStep → ValidateEvidence → Persist
   - Checkpoints stored in SQLite
@@ -143,9 +146,23 @@ This system implements a multi-agent LangGraph orchestration for supervising, dr
 - **No dependencies**: Can't model task relationships
 
 ## Adapters
-### MCPAdapter
-- Uses endpoint mapping from config
+### StdioMCPAdapter (Default)
+- Uses stdio transport (standard MCP protocol)
+- Launches Windows-MCP as subprocess
+- Communicates via JSON-RPC over stdin/stdout
+- Auto-detects from Claude Desktop config or falls back to npx
+
+### MCPAdapter (Legacy)
+- Uses HTTP/JSON-RPC endpoint mapping from config
 - Supports: list_windows, focus_window, screenshot, keypress, text_input, clipboard_get/set
+
+### VSCodeCopilotMonitor (High-Level Tool)
+- Wraps Windows-MCP session for VS Code-specific monitoring
+- Scans all VS Code windows, extracts Copilot Chat text via State-Tool
+- Copies full transcript via Clipboard-Tool ("Copy All" action)
+- Tracks history per window, detects busy state via text diffs
+- Returns structured results: `{title, is_busy, text_diff, transcript_diff}`
+- Used by ActStep for intelligent Copilot interaction
 
 ### Recovery Logic
 - Focus last-known VS Code window

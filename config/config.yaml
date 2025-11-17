@@ -33,12 +33,12 @@ adapters:
   mcp:
     # Stdio MCP configuration (default)
     # Automatically uses MCP servers from Claude Desktop config if available
-    # Otherwise falls back to 'npx -y mcp-control'
+    # Otherwise falls back to 'npx -y @curtsortouch/windows-mcp'
     transport: "stdio"  # "stdio" or "http"
     
     # Optional: Override auto-detection with specific server
     # command: "npx"
-    # args: ["-y", "mcp-control"]
+    # args: ["-y", "@curtsortouch/windows-mcp"]
     # env: {}
     
     # Legacy HTTP configuration (only if transport: "http")

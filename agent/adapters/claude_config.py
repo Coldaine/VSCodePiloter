@@ -98,11 +98,11 @@ def get_default_mcp_server_config() -> Dict[str, Any]:
     if claude_server:
         return claude_server
     
-    # Fallback to mcp-control via npx
-    logger.info("Using fallback MCP server: mcp-control via npx")
+    # Fallback to Windows-MCP via npx
+    logger.info("Using fallback MCP server: Windows-MCP via npx")
     return {
-        'name': 'mcp-control-fallback',
+        'name': 'windows-mcp-fallback',
         'command': 'npx',
-        'args': ['-y', 'mcp-control'],
+        'args': ['-y', '@curtsortouch/windows-mcp'],
         'env': {}
     }
