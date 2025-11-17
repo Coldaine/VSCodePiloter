@@ -21,7 +21,8 @@
 - Intelligently prioritizes tasks based on team context
 - Generates contextual messages for Copilot Chat
 - Temperature: 0.7 (deterministic reasoning)
-- Endpoint: `https://api.z.ai/api/coding/paas/v4/`
+- Endpoint: `https://api.z.ai/api/coding/paas/v4/` (coding plan subscription)
+- Context: 200K tokens
 
 **Vision Model (Screenshot Analysis)**: Z.ai GLM-4.5V
 - Analyzes VS Code window screenshots
@@ -29,7 +30,9 @@
 - Verifies action completion
 - Detects UI state for error recovery
 - Temperature: 0.95 (creative interpretation)
-- Endpoint: Same as text model (OpenAI-compatible)
+- Endpoint: `https://api.z.ai/api/paas/v4/` (standard API, pay-as-you-go)
+- Context: 64K-66K multimodal tokens
+- **CRITICAL**: Vision models do NOT work with coding endpoint
 
 **Secret Management**: Auto-detecting composite provider
 - Local dev: Bitwarden Secrets Manager (`bws` CLI)

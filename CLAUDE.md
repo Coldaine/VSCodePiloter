@@ -208,18 +208,21 @@ The system uses a composite pattern for automatic secret detection across enviro
 
 **Text Model (Reasoning)**: Z.ai GLM-4.6
 - **Purpose**: Repository analysis and task prioritization
-- **Endpoint**: `https://api.z.ai/api/coding/paas/v4/` (must use coding endpoint)
+- **Endpoint**: `https://api.z.ai/api/coding/paas/v4/` (coding plan subscription)
 - **Model Name**: `glm-4.6` (exact lowercase required)
 - **Temperature**: 0.7 (deterministic reasoning)
+- **Context**: 200K tokens
 - **Client Function**: `create_reasoner_llm()`
 
 **Vision Model (Screenshot Analysis)**: Z.ai GLM-4.5V
 - **Purpose**: VS Code window analysis and action validation
-- **Endpoint**: Same as text model (OpenAI-compatible)
+- **Endpoint**: `https://api.z.ai/api/paas/v4/` (standard API, different from coding!)
 - **Model Name**: `glm-4.5v` (configured in config.yaml)
 - **Temperature**: 0.95 (creative interpretation)
+- **Context**: 64K-66K multimodal tokens
 - **Client Function**: `create_vision_llm()`
 - **Helper Functions**: `create_vision_message()`, `encode_image_to_base64()`
+- **⚠️ CRITICAL**: Vision models MUST use `/api/paas/v4/`, NOT `/api/coding/paas/v4/`
 
 **Authentication**: Bearer token from `ZAI_API_KEY` environment variable
 - Auto-retrieved from Bitwarden Secrets Manager (local dev)

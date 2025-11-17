@@ -11,10 +11,16 @@ llm:
   provider: "z.ai"
   # Text model for reasoning (GLM-4.6 for coding)
   model: "glm-4.6"
-  # Vision model for screenshot analysis (GLM-4.5V)
+  # Vision model for screenshot analysis (GLM-4.5V flagship)
   vision_model: "glm-4.5v"
   api_key_env: "ZAI_API_KEY"  # Set this environment variable with your Z.ai API key
-  api_base: "https://api.z.ai/api/coding/paas/v4/"
+
+  # IMPORTANT: Z.ai has TWO different endpoints
+  # Coding endpoint: For GLM-4.6 text model (subscription-based)
+  api_base_coding: "https://api.z.ai/api/coding/paas/v4/"
+  # Standard endpoint: For GLM-4.5V vision model (pay-as-you-go)
+  api_base_standard: "https://api.z.ai/api/paas/v4/"
+
   temperature: 0.95
   max_tokens: 131072
   # Vision-specific settings

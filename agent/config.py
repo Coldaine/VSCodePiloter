@@ -26,10 +26,36 @@ class LLMConfig(BaseModel):
     model: str = Field("glm-4.6", description="Text model name for reasoning")
     vision_model: str = Field("glm-4.5v", description="Vision model name for screenshot analysis")
     api_key_env: str = Field("ZAI_API_KEY", description="Environment variable for API key")
-    api_base: str = Field("https://api.z.ai/api/coding/paas/v4/", description="API base URL")
+
+    # Z.ai has separate endpoints for coding plan vs standard API
+    api_base_coding: str = Field(
+        "https://api.z.ai/api/coding/paas/v4/",
+        description="Coding endpoint for GLM-4.6 (subscription-based)"
+    )
+    api_base_standard: str = Field(
+        "https://api.z.ai/api/paas/v4/",
+        description="Standard endpoint for GLM-4.5V vision model (pay-as-you-go)"
+    )
+
+    # Legacy field for backwards compatibility
+    api_base: str = Field(
+        default="",
+        description="Deprecated: Use api_base_coding or api_base_standard instead"
+    )
+
     temperature: float = Field(0.95, description="Temperature for sampling")
     max_tokens: int = Field(131072, description="Maximum context tokens")
     vision: VisionConfig = Field(default_factory=VisionConfig, description="Vision-specific settings")
+
+    def __init__(self, **data):
+        """Initialize with backwards compatibility for api_base field."""
+        super().__init__(**data)
+        # If api_base is provided but not the specific ones, use it for both
+        if self.api_base and (not data.get("api_base_coding") or not data.get("api_base_standard")):
+            if not data.get("api_base_coding"):
+                self.api_base_coding = self.api_base
+            if not data.get("api_base_standard"):
+                self.api_base_standard = self.api_base
 
 class Settings(BaseModel):
     repos_root: str

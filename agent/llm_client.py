@@ -129,11 +129,12 @@ def create_llm_client(
         )
 
     # Create ChatOpenAI with Z.ai coding endpoint configuration
+    # GLM-4.6 uses the coding endpoint (subscription-based)
     # Z.ai is OpenAI-compatible, so we use ChatOpenAI with custom base URL
     llm = ChatOpenAI(
         model=config.model,
         openai_api_key=api_key,
-        openai_api_base=config.api_base,
+        openai_api_base=config.api_base_coding,  # Use coding endpoint for text models
         temperature=config.temperature,
         max_tokens=config.max_tokens,
         # Z.ai GLM-4.6 supports streaming
@@ -246,10 +247,12 @@ def create_vision_llm(
         )
 
     # Create vision-capable LLM with GLM-4.5V
+    # CRITICAL: Vision models MUST use standard endpoint, NOT coding endpoint
+    # The coding endpoint (/api/coding/paas/v4/) does NOT support vision models
     llm = ChatOpenAI(
         model=config.vision_model,  # Use vision_model instead of model
         openai_api_key=api_key,
-        openai_api_base=config.api_base,
+        openai_api_base=config.api_base_standard,  # Use standard endpoint for vision
         temperature=config.temperature,
         max_tokens=config.max_tokens,
         streaming=False,  # Vision typically doesn't stream
