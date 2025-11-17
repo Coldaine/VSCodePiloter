@@ -1,12 +1,14 @@
-# Instructions for All Claude Instances
+# CLAUDE.md
 
-**Repository**: VSCodePiloter
-**Purpose**: Multi-agent LangGraph system for managing GitHub Copilot Chat across VS Code windows
-**Last Updated**: 2025-01-17
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
----
+## Project Overview
 
-## 🚨 CRITICAL: Read This First
+VSCodePiloter is a LangGraph-based multi-agent system that orchestrates GitHub Copilot Chat across multiple VS Code windows on Windows 11. It uses a Reasoner agent (powered by Z.ai GLM-4.6) and a Vision Actor to periodically monitor repositories, analyze PR status, and nudge Copilot Chat with contextual information.
+
+## 🚨 CRITICAL: Sprint-Based Workflow
+
+**This repository uses a sprint-based relay system where Claude instances collaborate via Sprint plans.**
 
 **BEFORE you start any work on this repository, you MUST:**
 
@@ -18,7 +20,12 @@
 
 **DO NOT skip these steps.** Future Claude instances depend on you following this workflow.
 
----
+### The Relay Race Metaphor
+
+You are part of a relay race. The baton is the sprint plan. Your job is to:
+1. Pick up where the last Claude left off (read Sprint1.md)
+2. Complete your portion of the work (check boxes as you go)
+3. Pass the baton cleanly to the next Claude (update Sprint1.md)
 
 ## Workflow for All Claude Instances
 
@@ -117,9 +124,109 @@ Tell the user:
 - ⚠️ Any issues or blockers discovered
 - ➡️ What the next task is
 
----
+## Common Development Commands
 
-## Project-Specific Rules
+### Setup & Installation
+```bash
+# Create virtual environment
+python -m venv venv
+venv\Scripts\activate  # Windows
+
+# Install dependencies
+pip install -e .
+
+# Install with fallback adapter (pyautogui)
+pip install -e .[fallback]
+```
+
+### Running the Agent
+```bash
+# Scan repositories only (dry run, no LLM)
+agent-cli scan
+
+# Run once with LLM reasoning (dry run mode by default)
+agent-cli run-once
+
+# Run in continuous loop (every 30 minutes)
+agent-cli run-loop --interval-sec 1800
+
+# Run watchdog (production mode with auto-recovery)
+agent-watchdog
+```
+
+### Testing
+```bash
+# Run all tests
+pytest tests/
+
+# Run specific test file
+pytest tests/test_llm_client.py -v
+
+# Run with coverage
+pytest --cov=agent --cov-report=html
+
+# Run integration tests (requires VS Code running)
+pytest tests/integration/ -v
+```
+
+### API Key Management
+```powershell
+# Retrieve Z.ai API key from Bitwarden (Windows)
+.\scripts\get_api_key.ps1
+
+# Test Z.ai endpoint connectivity
+.\scripts\test_zai_endpoint.ps1
+
+# Linux/macOS equivalents
+source ./scripts/get_api_key.sh
+./scripts/test_zai_endpoint.sh
+```
+
+## Architecture & Key Components
+
+### LangGraph State Flow
+The system uses LangGraph for orchestration with the following node sequence:
+1. **ScanRepos** → Discovers git repositories and PR status
+2. **SyncPlan** → Loads plan.yaml and creates work items
+3. **ReasonStep** → GLM-4.6 analyzes repos and selects highest-priority task
+4. **ActStep** → Executes desktop automation to interact with VS Code
+5. **ValidateEvidence** → Checks screenshots and artifacts
+6. **Persist** → Saves traces and updates heartbeat
+7. **Recovery** → (Currently disconnected) Should handle ActStep failures
+
+**Critical Gap**: The Recovery node exists but has no edges connecting it to the graph flow. This needs to be fixed in Sprint 1.
+
+### Secret Management Architecture
+The system uses a composite pattern for automatic secret detection across environments:
+
+- **BitwardenProvider**: Uses `bws` CLI when BWS_ACCESS_TOKEN is set (local dev)
+- **EnvVarProvider**: Uses environment variables (CI/CD, production)
+- **CompositeSecretProvider**: Automatically chains providers based on environment
+- Located in `agent/secrets/` with factory pattern in `factory.py`
+
+### LLM Integration Details
+- **Provider**: Z.ai GLM-4.6 (OpenAI-compatible interface via langchain-openai)
+- **Endpoint**: `https://api.z.ai/api/coding/paas/v4/` (must use coding endpoint)
+- **Model Name**: `glm-4.6` (exact lowercase required)
+- **Authentication**: Bearer token from `ZAI_API_KEY` environment variable
+- **Temperature**: 0.7 for Reasoner (consistency), 0.95 for Actor (creativity)
+- **Client Module**: `agent/llm_client.py` with specialized functions for each agent
+
+### Desktop Automation Adapters
+Two adapter options (configured in config.yaml):
+
+1. **MCPAdapter** (`agent/adapters/mcp_adapter.py`)
+   - Communicates with MCP server via HTTP/JSON
+   - Configurable endpoints for window operations
+   - Production-ready with proper error handling
+   - **Gap**: No retry logic - single HTTP failure = total failure
+
+2. **FallbackAdapter** (`agent/adapters/fallback_adapter.py`)
+   - Uses pyautogui for direct automation
+   - Testing/development fallback option
+   - Requires `pip install -e .[fallback]`
+
+## Critical Project Rules
 
 ### Testing Requirements
 
@@ -202,130 +309,23 @@ curl -X POST https://api.z.ai/api/coding/paas/v4/chat/completions \
   }'
 ```
 
-### User's Documentation Resources
+## Configuration
 
-The user has extensive documentation in their Obsidian Vault at `E:\Obsidian Vault\`.
+### Required Environment Variables
+- `ZAI_API_KEY`: Z.ai API key for GLM-4.6 (retrieve from Bitwarden)
+- `BWS_ACCESS_TOKEN`: (Optional) Bitwarden access token for automatic key retrieval
 
-**Before implementing anything Z.ai related, check:**
-- `E:\Obsidian Vault\Configuration\AI-Coding-Tools-Master-Configuration.md`
-- `E:\Obsidian Vault\Configuration\claude-code-router-playbook.md`
-- `E:\Obsidian Vault\Configuration\kilocode_provider_comparison.md`
-- `E:\Obsidian Vault\LLM\API Key Repository.md`
+### Key Configuration Files
+- `config/config.yaml`: Main configuration (repos_root, adapters, LLM settings)
+- `plans/plan.yaml`: Work item definitions and policies
+- `state/world_state.json`: Persistent agent state
 
-**These docs contain:**
-- Working configuration examples
-- Curl test commands that are known to work
-- Troubleshooting for common issues
-- Provider comparison matrices
-- Performance benchmarks
-
----
-
-## Common Tasks Reference
-
-### Running the Agent
-
-```bash
-# Scan repos only (dry run, no LLM)
-agent-cli scan
-
-# Run once with LLM reasoning (dry run, no VS Code interaction)
-agent-cli run-once
-
-# Run with actual VS Code interaction (DANGEROUS - test first!)
-# Edit config.yaml: write_mode: true
-agent-cli run-once
-
-# Run in loop (production mode)
-agent-cli run-loop --interval-sec 1800  # 30 minutes
-```
-
-### Testing
-
-```bash
-# Run unit tests
-pytest tests/
-
-# Run specific test file
-pytest tests/test_llm_client.py -v
-
-# Run integration tests (requires setup)
-pytest tests/integration/ -v
-
-# Run with coverage
-pytest --cov=agent --cov-report=html
-```
-
-### Debugging
-
-```bash
-# Check last episode log
-ls -lt state/episodes/*/*.jsonl | head -1 | xargs cat
-
-# Check last trace
-ls -lt state/episodes/*/trace_*.json | head -1 | xargs cat | jq .
-
-# Check LangGraph checkpoint
-sqlite3 state/checkpoints/graph.sqlite "SELECT * FROM checkpoints ORDER BY checkpoint_id DESC LIMIT 1;"
-
-# Check MCP server status (if using MCP)
-curl http://127.0.0.1:43110/health
-```
-
----
-
-## Git Commit Guidelines
-
-### Commit Message Format
-
-```
-<Type> <Task>: <Brief description>
-
-- Specific change 1
-- Specific change 2
-- Updated Sprint1.md checklist
-
-🤖 Generated with Claude Code
-```
-
-**Types:**
-- `feat:` - New feature
-- `fix:` - Bug fix
-- `docs:` - Documentation only
-- `test:` - Adding tests
-- `refactor:` - Code refactoring
-- `chore:` - Maintenance
-
-**Examples:**
-```
-feat Task 2.1: Add Bitwarden API key retrieval
-
-- Created scripts/get_api_key.ps1 helper
-- Updated SETUP.md with Bitwarden instructions
-- Tested key retrieval successfully
-- Updated Sprint1.md checklist (Task 2.1 complete)
-
-🤖 Generated with Claude Code
-```
-
-```
-test Task 2.3: Add LLM client unit tests
-
-- Created tests/test_llm_client.py with 4 test cases
-- All tests passing (100% coverage on llm_client.py)
-- Updated Sprint1.md checklist (Task 2.3 complete)
-
-🤖 Generated with Claude Code
-```
-
-### Commit Frequency
-
-- **Commit after each task** - Don't accumulate multiple tasks
-- **Commit after fixing bugs** - Even small fixes
-- **Commit after updating docs** - Keep documentation in sync
-- **Always update Sprint1.md** - In the same commit as the work
-
----
+### VS Code Requirements
+- Window titles must include folder path for reliable mapping
+- Recommended VS Code setting:
+  ```json
+  "window.title": "${dirty}${activeEditorShort}${separator}${folderPath}${separator}${appName}"
+  ```
 
 ## Error Handling Protocol
 
@@ -372,39 +372,6 @@ test Task 2.3: Add LLM client unit tests
 3. Test with fallback adapter instead of MCP
 4. Check MCP server is running: `curl http://127.0.0.1:43110/windows/list`
 
----
-
-## Quality Standards
-
-Before marking a task as complete:
-
-### Code Quality
-- [ ] Code follows Python conventions (PEP 8)
-- [ ] Functions have docstrings
-- [ ] No obvious bugs or code smells
-- [ ] Error handling implemented
-- [ ] Logging added for debugging
-
-### Testing
-- [ ] Unit tests written (if applicable)
-- [ ] Integration tests written (if applicable)
-- [ ] All tests passing
-- [ ] Edge cases considered
-
-### Documentation
-- [ ] Code changes documented
-- [ ] SETUP.md updated (if setup changes)
-- [ ] Sprint plan updated with checkmark
-- [ ] Any issues logged
-
-### Git
-- [ ] Changes committed with descriptive message
-- [ ] Commit message follows guidelines
-- [ ] No sensitive data committed
-- [ ] .gitignore working correctly
-
----
-
 ## Sprint Completion Protocol
 
 When all tasks in Sprint1.md are checked:
@@ -432,8 +399,6 @@ When all tasks in Sprint1.md are checked:
    - Next steps recommendation
    - Any blockers for Sprint 2
 
----
-
 ## Contact & Escalation
 
 ### When to Ask User for Help
@@ -451,7 +416,22 @@ When all tasks in Sprint1.md are checked:
 - **Things in the sprint plan** - The plan has the answers
 - **API keys** - Use Bitwarden, don't ask for paste
 
----
+### User's Documentation Resources
+
+The user has extensive documentation in their Obsidian Vault at `E:\Obsidian Vault\`.
+
+**Before implementing anything Z.ai related, check:**
+- `E:\Obsidian Vault\Configuration\AI-Coding-Tools-Master-Configuration.md`
+- `E:\Obsidian Vault\Configuration\claude-code-router-playbook.md`
+- `E:\Obsidian Vault\Configuration\kilocode_provider_comparison.md`
+- `E:\Obsidian Vault\LLM\API Key Repository.md`
+
+**These docs contain:**
+- Working configuration examples
+- Curl test commands that are known to work
+- Troubleshooting for common issues
+- Provider comparison matrices
+- Performance benchmarks
 
 ## Final Reminders
 
