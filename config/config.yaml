@@ -9,11 +9,19 @@ copilot:
   busy_min_age_sec: 10
 llm:
   provider: "z.ai"
+  # Text model for reasoning (GLM-4.6 for coding)
   model: "glm-4.6"
+  # Vision model for screenshot analysis (GLM-4.5V)
+  vision_model: "glm-4.5v"
   api_key_env: "ZAI_API_KEY"  # Set this environment variable with your Z.ai API key
   api_base: "https://api.z.ai/api/coding/paas/v4/"
   temperature: 0.95
   max_tokens: 131072
+  # Vision-specific settings
+  vision:
+    enabled: true
+    max_image_size: 2048  # Max dimension for images before resizing
+    detail: "high"  # OpenAI-compatible: "low", "high", or "auto"
 adapters:
   type: "mcp"  # "mcp" or "fallback"
   mcp:

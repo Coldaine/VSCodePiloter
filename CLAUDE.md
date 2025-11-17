@@ -205,12 +205,26 @@ The system uses a composite pattern for automatic secret detection across enviro
 - Located in `agent/secrets/` with factory pattern in `factory.py`
 
 ### LLM Integration Details
-- **Provider**: Z.ai GLM-4.6 (OpenAI-compatible interface via langchain-openai)
+
+**Text Model (Reasoning)**: Z.ai GLM-4.6
+- **Purpose**: Repository analysis and task prioritization
 - **Endpoint**: `https://api.z.ai/api/coding/paas/v4/` (must use coding endpoint)
 - **Model Name**: `glm-4.6` (exact lowercase required)
-- **Authentication**: Bearer token from `ZAI_API_KEY` environment variable
-- **Temperature**: 0.7 for Reasoner (consistency), 0.95 for Actor (creativity)
-- **Client Module**: `agent/llm_client.py` with specialized functions for each agent
+- **Temperature**: 0.7 (deterministic reasoning)
+- **Client Function**: `create_reasoner_llm()`
+
+**Vision Model (Screenshot Analysis)**: Z.ai GLM-4.5V
+- **Purpose**: VS Code window analysis and action validation
+- **Endpoint**: Same as text model (OpenAI-compatible)
+- **Model Name**: `glm-4.5v` (configured in config.yaml)
+- **Temperature**: 0.95 (creative interpretation)
+- **Client Function**: `create_vision_llm()`
+- **Helper Functions**: `create_vision_message()`, `encode_image_to_base64()`
+
+**Authentication**: Bearer token from `ZAI_API_KEY` environment variable
+- Auto-retrieved from Bitwarden Secrets Manager (local dev)
+- Falls back to environment variables (CI/CD)
+- Client Module: `agent/llm_client.py` with specialized functions for each model
 
 ### Desktop Automation Adapters
 Two adapter options (configured in config.yaml):
@@ -285,9 +299,10 @@ $env:ZAI_API_KEY = (bws secret get Z_AI_API_KEY | ConvertFrom-Json).value
    - ✅ Correct: `https://api.z.ai/api/coding/paas/v4/`
    - ❌ Wrong: `https://api.z.ai/api/paas/v4/`
 
-2. **Model Name**: MUST be exact lowercase
-   - ✅ Correct: `glm-4.6`
-   - ❌ Wrong: `GLM-4.6`, `glm-4`, `glm-4-6`
+2. **Model Names**: MUST be exact lowercase
+   - ✅ Correct (text): `glm-4.6`
+   - ✅ Correct (vision): `glm-4.5v`
+   - ❌ Wrong: `GLM-4.6`, `glm-4`, `GLM-4.5V`
 
 3. **Auth Format**: Standard Bearer token
    - ✅ Correct: `Authorization: Bearer YOUR_KEY`

@@ -1,0 +1,172 @@
+name: VSCodePiloter with Bitwarden Secrets
+
+# This workflow demonstrates using Bitwarden Secrets Manager in CI/CD
+# instead of GitHub Secrets for enhanced security
+
+on:
+  workflow_dispatch:
+    inputs:
+      use_bitwarden:
+        description: 'Use Bitwarden for secrets'
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  run-with-bitwarden:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Bitwarden CLI
+        if: github.event.inputs.use_bitwarden == 'true'
+        run: |
+          # Install Bitwarden Secrets Manager CLI
+          Write-Host "Installing Bitwarden Secrets Manager CLI..."
+
+          # Download latest release
+          $bwsUrl = "https://github.com/bitwarden/sdk/releases/latest/download/bws-x86_64-pc-windows-msvc.zip"
+          $zipPath = "$env:TEMP\bws.zip"
+          $extractPath = "$env:TEMP\bws"
+
+          Invoke-WebRequest -Uri $bwsUrl -OutFile $zipPath
+          Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
+
+          # Add to PATH
+          $bwsExe = Get-ChildItem -Path $extractPath -Filter "bws.exe" -Recurse | Select-Object -First 1
+          $bwsDir = $bwsExe.DirectoryName
+          echo "$bwsDir" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+          Write-Host "✓ Bitwarden CLI installed at: $bwsDir"
+
+      - name: Verify Bitwarden Installation
+        if: github.event.inputs.use_bitwarden == 'true'
+        run: |
+          bws --version
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Test Secret Provider (Bitwarden)
+        if: github.event.inputs.use_bitwarden == 'true'
+        env:
+          # Store BWS access token in GitHub Secrets
+          # This is the only secret needed - all others come from Bitwarden
+          BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
+        run: |
+          python -c "
+          from agent.secrets import get_secret_provider, BitwardenProvider
+          import os
+
+          # Explicitly use Bitwarden provider
+          provider = BitwardenProvider()
+
+          if provider.is_available():
+              print('✓ Bitwarden provider is available')
+
+              try:
+                  # List available secrets
+                  secrets = provider.list_secrets()
+                  print(f'Found {len(secrets)} secrets in Bitwarden')
+
+                  # Get Z.ai API key
+                  key = provider.get_secret('Z_AI_API_KEY')
+                  print('✓ Successfully retrieved Z.ai API key from Bitwarden')
+
+              except Exception as e:
+                  print(f'✗ Error: {e}')
+                  exit(1)
+          else:
+              print('✗ Bitwarden provider not available')
+              exit(1)
+          "
+
+      - name: Test Secret Provider (Environment)
+        if: github.event.inputs.use_bitwarden == 'false'
+        env:
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+        run: |
+          python -c "
+          from agent.secrets import get_secret_provider
+
+          # Auto-detect (should use EnvVar in GitHub Actions)
+          provider = get_secret_provider()
+          print(f'Using provider: {provider}')
+
+          try:
+              key = provider.get_secret('ZAI_API_KEY')
+              print('✓ Successfully retrieved API key from environment')
+          except Exception as e:
+              print(f'✗ Error: {e}')
+              exit(1)
+          "
+
+      - name: Run Agent with Bitwarden Secrets
+        if: github.event.inputs.use_bitwarden == 'true'
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
+        run: |
+          Write-Host "Running agent with Bitwarden secret provider..."
+
+          # Run using bws to inject all secrets automatically
+          bws run -- agent-cli scan
+
+          # Or run with explicit provider configuration
+          python -c "
+          from agent.main import main
+          from agent.secrets import BitwardenProvider, set_global_secret_provider
+
+          # Set Bitwarden as the global provider
+          provider = BitwardenProvider()
+          set_global_secret_provider(provider)
+
+          # Run the agent
+          main(['scan'])
+          "
+
+      - name: Run Agent with Environment Secrets
+        if: github.event.inputs.use_bitwarden == 'false'
+        env:
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+        run: |
+          Write-Host "Running agent with environment secret provider..."
+          agent-cli scan
+
+      - name: Security Check
+        if: always()
+        run: |
+          # Ensure no secrets are exposed in logs
+          Write-Host "Checking for exposed secrets in logs..."
+
+          $patterns = @(
+            "[a-f0-9]{32}\.[a-zA-Z0-9]{16}",  # Z.ai key pattern
+            "0\.[a-f0-9-]+\.[a-zA-Z0-9:+=]+",  # BWS token pattern
+            "sk-[a-zA-Z0-9]{48}",              # OpenAI pattern
+            "AIza[a-zA-Z0-9_-]{35}"            # Google API pattern
+          )
+
+          $found = $false
+          foreach ($pattern in $patterns) {
+            $matches = Get-ChildItem -Path . -Recurse -Include *.log, *.txt, *.json |
+                      Select-String -Pattern $pattern
+
+            if ($matches) {
+              Write-Host "⚠️  Potential secret exposure detected!"
+              $found = $true
+            }
+          }
+
+          if (-not $found) {
+            Write-Host "✓ No exposed secrets detected"
+          }

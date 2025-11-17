@@ -30,9 +30,25 @@ pip install -e .[fallback]
 
 ### 3. Configure Z.ai API Key
 
-VSCodePiloter uses Z.ai's GLM-4.6 model for intelligent task reasoning.
+VSCodePiloter uses Z.ai's GLM-4.6 model for intelligent task reasoning. The system includes **automatic secret management** that works across all environments (local, CI/CD, cloud).
 
-#### Option A: Retrieve from Bitwarden Secrets Manager (Recommended)
+#### Automatic Secret Detection (NEW - Recommended)
+
+The system automatically detects your environment and uses the appropriate secret backend:
+
+```bash
+# The system will automatically:
+# - Use Bitwarden if BWS_ACCESS_TOKEN is set (local dev)
+# - Use environment variables in CI/CD (GitHub Actions, etc.)
+# - Fall back to .env files if present
+
+# No configuration needed - just run:
+agent-cli run-once
+```
+
+For detailed information, see [Secret Management Documentation](docs/SECRET_MANAGEMENT.md).
+
+#### Option A: Retrieve from Bitwarden Secrets Manager (Local Development)
 
 If you store your API keys in Bitwarden Secrets Manager, use the provided helper script for secure retrieval:
 
@@ -303,20 +319,35 @@ Z.ai Coding Plan provides free API calls. Monitor your usage at: [https://z.ai/d
 
 ## Architecture
 
-The system now uses **GLM-4.6 for intelligent reasoning**:
+The system uses **dual AI models** for intelligent orchestration:
 
+### Text Model: GLM-4.6 (Reasoning)
 1. **ScanRepos**: Discovers git repositories and PR status
 2. **SyncPlan**: Loads plan.yaml and creates work items
 3. **ReasonStep**: **GLM-4.6 analyzes repos and selects highest-priority task**
 4. **ActStep**: Executes desktop automation to interact with Copilot Chat
-5. **ValidateEvidence**: Checks screenshots and artifacts
+5. **ValidateEvidence**: **GLM-4.5V verifies actions via screenshot analysis**
 6. **Persist**: Saves traces and updates heartbeat
 
-The **Reasoner Agent** is no longer "automation theater" - it uses real AI to:
+### Vision Model: GLM-4.5V (Screenshot Analysis)
+The **Vision Actor** uses GLM-4.5V to:
+- Analyze VS Code window screenshots
+- Verify Copilot Chat state (open/closed/busy)
+- Validate that actions succeeded
+- Detect UI errors for recovery
+
+### Intelligent Capabilities
+The **Reasoner Agent** uses real AI to:
 - Prioritize tasks based on repo health
 - Consider PR status and blockers
 - Balance work across repositories
 - Generate context-appropriate messages for Copilot Chat
+
+The **Vision Actor** can:
+- Read text from screenshots
+- Detect UI state changes
+- Verify window focus and content
+- Provide feedback for error recovery
 
 ## Next Steps
 

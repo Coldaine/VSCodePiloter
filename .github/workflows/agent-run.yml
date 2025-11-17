@@ -1,0 +1,148 @@
+name: VSCodePiloter Agent Run
+
+on:
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      run_mode:
+        description: 'Run mode'
+        required: true
+        default: 'dry-run'
+        type: choice
+        options:
+          - dry-run
+          - write-enabled
+      interval_minutes:
+        description: 'Interval for loop mode (minutes)'
+        required: false
+        default: '30'
+        type: string
+
+  # Scheduled runs
+  schedule:
+    # Every 6 hours
+    - cron: '0 */6 * * *'
+
+  # On push to main (for testing)
+  push:
+    branches:
+      - main
+    paths:
+      - 'agent/**'
+      - 'config/**'
+      - 'plans/**'
+
+jobs:
+  run-agent:
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Configure Agent
+        env:
+          # Z.ai API key from GitHub Secrets
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          # Or use alternative name if stored differently
+          Z_AI_API_KEY: ${{ secrets.Z_AI_API_KEY }}
+        run: |
+          # Update config for CI environment
+          $config = Get-Content config/config.yaml -Raw
+
+          # Set write mode based on input
+          if ("${{ github.event.inputs.run_mode }}" -eq "write-enabled") {
+            $config = $config -replace 'write_mode: false', 'write_mode: true'
+          }
+
+          # Set repos root to GitHub workspace
+          $config = $config -replace 'repos_root: ".*"', "repos_root: `"${{ github.workspace }}/test-repos`""
+
+          # Save updated config
+          $config | Set-Content config/config.yaml
+
+          Write-Host "Configuration updated for CI environment"
+
+      - name: Verify Secret Provider
+        run: |
+          python -c "
+          from agent.secrets import get_secret_provider
+          import os
+
+          # Should auto-detect GitHub Actions environment
+          provider = get_secret_provider()
+          print(f'Using provider: {provider}')
+
+          # Test secret retrieval
+          try:
+              # Will use environment variable since we're in GitHub Actions
+              key = provider.get_secret('ZAI_API_KEY')
+              print('✓ Successfully retrieved API key')
+          except Exception as e:
+              print(f'✗ Failed to retrieve key: {e}')
+              exit(1)
+          "
+
+      - name: Run Agent (Dry Run)
+        if: github.event_name == 'push' || github.event.inputs.run_mode == 'dry-run'
+        run: |
+          Write-Host "Running agent in dry-run mode..."
+          agent-cli run-once
+        env:
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+
+      - name: Run Agent (Write Enabled)
+        if: github.event.inputs.run_mode == 'write-enabled'
+        run: |
+          Write-Host "Running agent with write mode enabled..."
+          agent-cli run-once
+        env:
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: agent-execution-logs
+          path: |
+            state/episodes/**/*.jsonl
+            state/episodes/**/*.json
+            state/episodes/**/*.png
+          retention-days: 7
+
+      - name: Check Agent Health
+        if: always()
+        run: |
+          # Check if agent completed successfully
+          if (Test-Path "state/episodes/*/trace_*.json") {
+            Write-Host "✓ Agent execution traces found"
+
+            # Get latest trace
+            $latest = Get-ChildItem "state/episodes/*/trace_*.json" |
+                      Sort-Object LastWriteTime -Descending |
+                      Select-Object -First 1
+
+            Write-Host "Latest trace: $($latest.Name)"
+
+            # Check for errors in trace
+            $trace = Get-Content $latest | ConvertFrom-Json
+            if ($trace.error) {
+              Write-Host "✗ Errors found in execution trace"
+              exit 1
+            }
+          } else {
+            Write-Host "✗ No execution traces found"
+            exit 1
+          }

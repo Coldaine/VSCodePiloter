@@ -1,21 +1,40 @@
 # System Architecture Documentation
 
-## Critical Architecture Notice
+## System Status: Sprint 1 - LLM Integration Complete ✅
 
-### Current State vs Intended Design
+### Implementation Progress
 
-**WARNING**: This codebase currently operates as **automation theater** - using AI orchestration frameworks without any actual AI integration.
+| Component | Status | Implementation Details |
+|-----------|--------|------------------------|
+| **LLM Integration** | ✅ Implemented | Z.ai GLM-4.6 for text reasoning, GLM-4.5V for vision |
+| **Reasoner Agent** | ✅ Implemented | GLM-4.6-powered intelligent task prioritization |
+| **Vision Capabilities** | ✅ Implemented | GLM-4.5V for screenshot analysis and validation |
+| **Secret Management** | ✅ Implemented | Bitwarden Secrets Manager + environment variable fallback |
+| **Recovery Node** | ⚠️ Pending | Defined but not wired into graph flow |
+| **Retry Logic** | ⚠️ Pending | No retry mechanism in MCP adapter |
+| **Screenshot Validation** | ⚠️ Pending | Vision model available but not integrated in validation |
 
-| Component | Current Implementation | Intended Design |
-|-----------|----------------------|-----------------|
-| **LangGraph** | Simple state machine (dict router) | Multi-agent AI orchestration with LLMs |
-| **Reasoner Agent** | Round-robin selection (`i % n`) | Claude/GPT-powered intelligent prioritization |
-| **Vision Actor** | Blind command execution | Vision model analyzing screenshots for validation |
-| **Screenshots** | Captured but never analyzed | Fed to vision models for state detection |
-| **Plan Execution** | Action semantics ignored | Dynamic interpretation of plan directives |
-| **Recovery Node** | Defined but disconnected | Active error recovery with retry logic |
+### LLM Architecture
 
-**This is architectural malpractice** - like using a Formula 1 car as a shopping cart. The system must be upgraded with LLM integration to fulfill its intended purpose.
+**Text Model (Reasoning)**: Z.ai GLM-4.6
+- Analyzes repository health (branches, PRs, activity)
+- Intelligently prioritizes tasks based on team context
+- Generates contextual messages for Copilot Chat
+- Temperature: 0.7 (deterministic reasoning)
+- Endpoint: `https://api.z.ai/api/coding/paas/v4/`
+
+**Vision Model (Screenshot Analysis)**: Z.ai GLM-4.5V
+- Analyzes VS Code window screenshots
+- Validates Copilot Chat state (open/busy/responsive)
+- Verifies action completion
+- Detects UI state for error recovery
+- Temperature: 0.95 (creative interpretation)
+- Endpoint: Same as text model (OpenAI-compatible)
+
+**Secret Management**: Auto-detecting composite provider
+- Local dev: Bitwarden Secrets Manager (`bws` CLI)
+- CI/CD: Environment variables
+- Fallback: `.env` file or direct env vars
 
 ## Testing Requirements
 
@@ -73,29 +92,46 @@ This system implements a multi-agent LangGraph orchestration for supervising, dr
 6. **Persist**: Stores run trace + artifacts, updates heartbeat.
 7. **Watchdog**: If heartbeat stagnant, run recovery or re-invoke the graph.
 
-## Critical Missing Components
+## Recently Completed Components (Sprint 1)
 
-### 1. LLM Integration (Currently Absent)
-- **No LLM clients**: No OpenAI/Anthropic SDK imported or initialized
-- **Unused prompts**: `reasoner_system.txt` and `actor_system.txt` loaded but never used
-- **No tool calling**: LangGraph configured for dict passing, not AI tool use
-- **No streaming**: No support for incremental LLM responses
+### ✅ 1. LLM Integration
+- **GLM-4.6 client**: Fully integrated via `langchain-openai`
+- **Reasoner prompts**: `reasoner_system.txt` now actively used
+- **Intelligent prioritization**: Repository health analysis with LLM reasoning
+- **Streaming support**: Enabled for real-time responses
+- **Secret management**: Bitwarden integration for secure API key storage
 
-### 2. Vision Analysis (Currently Blind)
-- **Screenshots not analyzed**: Captured as base64 but never decoded or examined
-- **No OCR**: Can't read text from VS Code windows
-- **No state detection**: Can't verify if Copilot Chat is open, busy, or responsive
-- **No validation**: Can't confirm if actions succeeded
+### ✅ 2. Vision Capabilities
+- **GLM-4.5V integration**: Vision model client implemented
+- **Screenshot encoding**: Base64 encoding with automatic resizing
+- **Vision message formatting**: OpenAI-compatible vision API format
+- **Helper functions**: `create_vision_message()`, `encode_image_to_base64()`
+- **Configuration**: Vision settings in `config.yaml` with enable/disable toggle
 
-### 3. Error Recovery (Currently Orphaned)
+### ✅ 3. Secret Management
+- **Auto-detection**: Environment-aware provider selection
+- **Bitwarden provider**: Full `bws` CLI integration
+- **Composite provider**: Chains multiple secret sources
+- **Fallback chain**: Bitwarden → .env → environment variables
+- **Caching**: LRU cache for secret lookups
+
+## Remaining Gaps (Sprint 2+)
+
+### ⚠️ 1. Vision Integration in Validation
+- **Vision model not used yet**: GLM-4.5V available but `validate_evidence.py` doesn't call it
+- **Screenshot analysis needed**: Should verify Copilot Chat state visually
+- **State detection**: Can't confirm if actions succeeded without vision validation
+
+### ⚠️ 2. Error Recovery (Currently Orphaned)
 - **Recovery node disconnected**: Exists but has no edges from other nodes
 - **No retry logic**: Failures just log warnings and continue
 - **No circuit breakers**: Will keep failing on same error
 - **No graceful degradation**: All-or-nothing execution
 
-### 4. Plan Intelligence (Currently Ignored)
-- **Action semantics unused**: Plan defines actions but they're not interpreted
-- **No policy execution**: Selectors like "label:needs-review" ignored
+### ⚠️ 3. Plan Intelligence (Partially Implemented)
+- **Basic reasoning working**: LLM selects tasks based on repo health
+- **Action semantics partial**: Some plan directives interpreted
+- **Policy execution incomplete**: Selectors like "label:needs-review" partially implemented
 - **No scheduling**: Cadence field exists but not enforced
 - **No dependencies**: Can't model task relationships
 

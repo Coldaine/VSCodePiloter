@@ -16,13 +16,20 @@ class CopilotConfig(BaseModel):
     command_palette_action: str = "GitHub Copilot Chat: Focus on Chat View"
     busy_min_age_sec: int = 10
 
+class VisionConfig(BaseModel):
+    enabled: bool = Field(True, description="Enable vision capabilities")
+    max_image_size: int = Field(2048, description="Max image dimension before resizing")
+    detail: str = Field("high", description="Vision detail level: low, high, auto")
+
 class LLMConfig(BaseModel):
     provider: str = Field("z.ai", description="LLM provider: z.ai, openai, anthropic")
-    model: str = Field("glm-4.6", description="Model name")
+    model: str = Field("glm-4.6", description="Text model name for reasoning")
+    vision_model: str = Field("glm-4.5v", description="Vision model name for screenshot analysis")
     api_key_env: str = Field("ZAI_API_KEY", description="Environment variable for API key")
     api_base: str = Field("https://api.z.ai/api/coding/paas/v4/", description="API base URL")
     temperature: float = Field(0.95, description="Temperature for sampling")
     max_tokens: int = Field(131072, description="Maximum context tokens")
+    vision: VisionConfig = Field(default_factory=VisionConfig, description="Vision-specific settings")
 
 class Settings(BaseModel):
     repos_root: str
