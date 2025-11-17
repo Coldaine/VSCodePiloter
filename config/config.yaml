@@ -29,11 +29,19 @@ llm:
     max_image_size: 2048  # Max dimension for images before resizing
     detail: "high"  # OpenAI-compatible: "low", "high", or "auto"
 adapters:
-  type: "fallback"  # "mcp" or "fallback"
-  # Using fallback adapter (pyautogui + win32) for direct Windows automation
-  # Removed custom MCP server - violated project's "reuse, don't rebuild" principle
-  # For advanced MCP features, use Windows-MCP tools via vscode_copilot_monitor
+  type: "mcp"  # "mcp" (stdio), "mcp-http" (legacy HTTP), or "fallback" (pyautogui)
   mcp:
+    # Stdio MCP configuration (default)
+    # Automatically uses MCP servers from Claude Desktop config if available
+    # Otherwise falls back to 'npx -y mcp-control'
+    transport: "stdio"  # "stdio" or "http"
+    
+    # Optional: Override auto-detection with specific server
+    # command: "npx"
+    # args: ["-y", "mcp-control"]
+    # env: {}
+    
+    # Legacy HTTP configuration (only if transport: "http")
     base_url: "http://127.0.0.1:43110"
     jsonrpc: false
     endpoints:

@@ -17,9 +17,12 @@
 ### 1) Requirements
 - Windows 11, Python 3.11+
 - Git + GitHub CLI (`gh`) installed and on PATH
-- (Optional) Windows-MCP or similar MCP server for advanced features
+- A Windows desktop automation **MCP server** (e.g., mcp-control, Windows-MCP)
+  - If you have Claude Desktop installed, the system will automatically use MCP servers from its config
+  - Otherwise, it will use `npx -y mcp-control` as a fallback
+  - Or configure your own in `config/config.yaml` under `adapters.mcp`
 
-> **Note**: By default, uses the **fallback adapter** (`pyautogui` + `win32`) for direct Windows automation. For advanced MCP features like state detection and UI element analysis, install [Windows-MCP](https://github.com/CursorTouch/Windows-MCP) and integrate via the `vscode_copilot_monitor` tool.
+> **Note**: This repo uses stdio transport (standard MCP protocol) by default. An optional **local fallback** using `pyautogui` exists (set `adapters.type: "fallback"`).
 
 ### 2) Install
 

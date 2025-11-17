@@ -7,12 +7,45 @@ from agent.langgraph_app import build_graph
 from agent.adapters.base import DesktopAdapter
 from agent.adapters.mcp_adapter import MCPAdapter
 from agent.adapters.fallback_adapter import FallbackAdapter
+from agent.adapters.stdio_mcp_adapter import StdioMCPAdapter
 from agent.observability import log_event
-
 def _adapter_from_settings(settings: Settings) -> DesktopAdapter:
     if settings.adapters.type == "mcp":
         m = settings.adapters.mcp
+        transport = getattr(m, 'transport', 'stdio')
+        
+        if transport == "stdio":
+            # Use stdio MCP adapter (standard MCP protocol)
+            from agent.adapters.stdio_mcp_adapter import StdioMCPAdapter
+            from agent.adapters.claude_config import get_default_mcp_server_config
+            
+            # Check for explicit config, otherwise auto-detect from Claude Desktop
+            if hasattr(m, 'command') and m.command:
+                config = {
+                    'command': m.command,
+                    'args': getattr(m, 'args', []),
+                    'env': getattr(m, 'env', {})
+                }
+            else:
+                config = get_default_mcp_server_config()
+            
+            return StdioMCPAdapter(
+                command=config['command'],
+                args=config['args'],
+                env=config.get('env', {})
+            )
+        else:
+            # Legacy HTTP transport
+            return MCPAdapter(m.base_url, endpoints=m.endpoints, jsonrpc=m.jsonrpc)
+    
+    elif settings.adapters.type == "mcp-http":
+        # Explicit HTTP-based MCP
+        m = settings.adapters.mcp
         return MCPAdapter(m.base_url, endpoints=m.endpoints, jsonrpc=m.jsonrpc)
+    elif settings.adapters.type == "fallback":
+        return FallbackAdapter()
+    else:
+        raise ValueError(f"Unknown adapter type: {settings.adapters.type}")e))
     elif settings.adapters.type == "fallback":
         return FallbackAdapter()
     else:
