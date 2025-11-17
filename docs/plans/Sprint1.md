@@ -56,7 +56,7 @@ Extensive documentation found in `E:\Obsidian Vault\` revealed:
 - [ ] Reasoner agent makes intelligent task selections based on repo health
 - [ ] System runs end-to-end in dry-run mode without errors
 - [ ] API key retrieval from Bitwarden works reliably
-- [ ] Error recovery node is wired into graph flow
+ - [x] Error recovery node is wired into graph flow
 - [ ] At least 3 integration tests pass with real VS Code windows
 - [ ] All configuration documented in SETUP.md
 
@@ -163,6 +163,12 @@ return items[idx]
 - Implementation priority roadmap
 
 **Rationale**: Clear documentation for future developers and Claude instances.
+
+#### 6b. Documentation Consistency + Changelog (COMPLETED)
+
+- [x] Consistency pass across `README.md`, `ARCHITECTURE.md`, `PILLARS.md`, `CLAUDE.md`
+- [x] Added `CHANGELOG.md` following Keep a Changelog format
+- [x] Standardized on stdio MCP transport with Windows-MCP default and Claude Desktop auto-detection
 
 #### 6. Git Repository Initialized
 **Commits**:
@@ -456,7 +462,7 @@ workflow.add_edge("Recovery", "ActStep")  # Retry after recovery
 **Objective**: Add retry with exponential backoff using `tenacity` library.
 
 **Steps**:
-- [ ] Modify `agent/adapters/mcp_adapter.py`
+- [ ] Modify `agent/adapters/stdio_mcp_adapter.py` (default) or legacy `agent/adapters/mcp_adapter.py`
 - [ ] Add `@retry` decorator to HTTP calls
 - [ ] Configure: 3 retries, exponential backoff, 30s timeout
 - [ ] Log retry attempts
@@ -850,7 +856,8 @@ def _validate_screenshot(artifact_b64: str) -> bool:
 - `agent/main.py` - CLI entry point
 
 ### Adapters
-- `agent/adapters/mcp_adapter.py` - MCP HTTP client
+- `agent/adapters/stdio_mcp_adapter.py` - MCP stdio adapter (default)
+- `agent/adapters/mcp_adapter.py` - Legacy MCP HTTP client
 - `agent/adapters/fallback_adapter.py` - PyAutoGUI fallback
 - `agent/adapters/base.py` - Adapter interface
 

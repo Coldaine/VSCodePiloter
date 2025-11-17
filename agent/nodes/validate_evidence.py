@@ -106,10 +106,39 @@ def validate_evidence(state: Dict[str, Any]) -> Dict[str, Any]:
                 })
 
         # Step 3: Determine overall validation status
-        # For now, pass if screenshots exist
-        # In future: could parse vision content for "Copilot Chat is open" confirmation
         structural_ok = has_screenshots
-        vision_ok = vision_result.get("success", True) if vision_result else True
+        vision_ok = True
+        vision_issues = []
+
+        # Parse vision analysis for specific issues
+        if vision_result and vision_result.get("success"):
+            content = (vision_result.get("content") or "").lower()
+            
+            # Check for failure indicators
+            failure_keywords = [
+                "error", "failed", "not open", "not visible", 
+                "closed", "cannot see", "busy", "loading",
+                "blocked", "unresponsive"
+            ]
+            
+            success_keywords = [
+                "copilot chat is open", "chat is visible",
+                "chat view is open", "ready", "available"
+            ]
+            
+            has_failure = any(kw in content for kw in failure_keywords)
+            has_success = any(kw in content for kw in success_keywords)
+            
+            if has_failure and not has_success:
+                vision_ok = False
+                vision_issues.append(f"Vision detected issues: {content[:200]}")
+                logger.warning(f"Vision validation failed: {content[:200]}")
+            
+        elif vision_result and not vision_result.get("success"):
+            # Vision call failed entirely
+            vision_ok = False
+            vision_issues.append(f"Vision API error: {vision_result.get('error')}")
+            logger.error(f"Vision API failed: {vision_result.get('error')}")
 
         overall_validated = structural_ok and vision_ok
 
@@ -117,6 +146,8 @@ def validate_evidence(state: Dict[str, Any]) -> Dict[str, Any]:
         state["validation_detail"] = {
             "structural": structural_ok,
             "vision": vision_result,
+            "vision_ok": vision_ok,
+            "vision_issues": vision_issues,
             "overall": overall_validated
         }
 

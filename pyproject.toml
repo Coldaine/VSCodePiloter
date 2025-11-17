@@ -36,7 +36,49 @@ fallback = [
     "pyautogui>=0.9.54"
 ]
 
+dev = [
+    "pytest>=8.2.0",
+    "pytest-xdist>=3.6.1",
+    "pytest-timeout>=2.3.1",
+    "pytest-rerunfailures>=14.0",
+    "coverage[toml]>=7.5.3",
+    "ruff>=0.6.5",
+    "pre-commit>=3.7.1"
+]
+
 [project.scripts]
 agent-cli = "agent.main:cli"
 agent-watchdog = "agent.scripts.run_watchdog:main"
  
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "UP"  # pyupgrade
+]
+ignore = [
+]
+
+[tool.coverage.run]
+branch = true
+source = ["agent"]
+omit = [
+    "tests/*",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = true
+

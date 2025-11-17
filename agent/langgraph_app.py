@@ -33,6 +33,24 @@ def _should_recover(state: Dict[str, Any]) -> str:
     # Either succeeded or exhausted retries - continue to validation
     return "ValidateEvidence"
 
+def _should_recover_after_validation(state: Dict[str, Any]) -> str:
+    """
+    Determine if validation failed (vision detected issues) and should retry.
+
+    Returns:
+        - "Recovery" if validation failed and retry count < MAX_RECOVERY_ATTEMPTS
+        - "Persist" otherwise (validation passed or exhausted retries)
+    """
+    validated = state.get("validated", True)
+    retry_count = state.get("_recovery_retry_count", 0)
+
+    # If validation failed (vision saw errors/busy/closed chat)
+    if not validated and retry_count < MAX_RECOVERY_ATTEMPTS:
+        return "Recovery"
+
+    # Either validated successfully or exhausted retries
+    return "Persist"
+
 def _increment_retry_wrapper(node_func):
     """Wrapper to increment retry counter when entering Recovery."""
     def wrapper(state: Dict[str, Any]) -> Dict[str, Any]:
@@ -80,8 +98,19 @@ def build_graph(sqlite_path: str):
     g.add_edge("Recovery", "ResetRetry")
     g.add_edge("ResetRetry", "ActStep")
 
-    # Continue with validation and persistence
-    g.add_edge("ValidateEvidence", "Persist")
+    # CRITICAL: Conditional routing after ValidateEvidence
+    # If validation failed (vision detected issues) → Recovery
+    # Otherwise → Persist
+    g.add_conditional_edges(
+        "ValidateEvidence",
+        _should_recover_after_validation,
+        {
+            "Recovery": "Recovery",
+            "Persist": "Persist"
+        }
+    )
+
+    # Final persistence
     g.add_edge("Persist", END)
 
     memory = SqliteSaver(sqlite_path)

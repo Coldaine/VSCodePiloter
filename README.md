@@ -12,6 +12,10 @@
 
 ---
 
+## Canonical Architecture
+
+The authoritative system design is documented in `ARCHITECTURE.md` (Canonical Architecture, Nov 2025). Older documents like `CLAUDE.md` and `PILLARS.md` remain for context but defer to `ARCHITECTURE.md` for source of truth on flow and decisions.
+
 ## Quick Start
 
 ### 1) Requirements
