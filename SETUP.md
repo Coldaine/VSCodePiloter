@@ -32,13 +32,73 @@ pip install -e .[fallback]
 
 VSCodePiloter uses Z.ai's GLM-4.6 model for intelligent task reasoning.
 
-#### Get Your Z.ai API Key
+#### Option A: Retrieve from Bitwarden Secrets Manager (Recommended)
+
+If you store your API keys in Bitwarden Secrets Manager, use the provided helper script for secure retrieval:
+
+**Prerequisites:**
+- Bitwarden Secrets Manager CLI (`bws`) installed
+- `BWS_ACCESS_TOKEN` environment variable set with your access token
+- Secret named `Z_AI_API_KEY` exists in your Bitwarden organization
+
+**Install Bitwarden Secrets Manager CLI:**
+```bash
+# Windows (PowerShell)
+winget install Bitwarden.BWS
+
+# macOS
+brew install bitwarden/tap/bws
+
+# Linux
+# Download from https://bitwarden.com/help/secrets-manager-cli/
+```
+
+**Set Your BWS Access Token:**
+```powershell
+# Windows (PowerShell)
+$env:BWS_ACCESS_TOKEN = "your-bws-access-token"
+
+# Linux/macOS (Bash)
+export BWS_ACCESS_TOKEN="your-bws-access-token"
+```
+
+Get your access token from: https://vault.bitwarden.com/#/settings/security/security-keys
+
+**Run the Helper Script:**
+
+**Windows:**
+```powershell
+.\scripts\get_api_key.ps1
+```
+
+**Linux/macOS:**
+```bash
+source ./scripts/get_api_key.sh
+```
+
+The script will:
+- Retrieve the `Z_AI_API_KEY` secret from Bitwarden
+- Set the `ZAI_API_KEY` environment variable for your current session
+- Display instructions for making it permanent
+- Show a preview of the key (first 8 characters)
+
+**Verify the key was retrieved:**
+```bash
+echo $env:ZAI_API_KEY  # PowerShell
+echo $ZAI_API_KEY       # Bash
+```
+
+#### Option B: Manual API Key Setup
+
+If you don't use Bitwarden, you can set the API key manually.
+
+**Get Your Z.ai API Key:**
 
 1. Sign up at [https://z.ai](https://z.ai)
-2. Subscribe to the **GLM Coding Plan** (free coding calls available)
+2. Subscribe to the **GLM Coding Plan** ($3/month, free coding calls available)
 3. Go to your dashboard and generate an API key
 
-#### Set Environment Variable
+**Set Environment Variable:**
 
 **Windows (PowerShell):**
 ```powershell
