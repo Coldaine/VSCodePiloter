@@ -36,7 +36,10 @@ Async is only needed if you introduce continuous telemetry or parallel long-late
 
 # System Architecture Documentation
 
-## System Status: Sprint 1 - Canonical Flow Established ✅
+## System Status
+
+- **Sprint 1 (Completed)**: LLM integration, secret management, canonical LangGraph flow, vision-gated validation, and initial Recovery wiring.
+- **Sprint 2 (Planned/In Progress)**: Hardening VSCodeCopilotMonitor behavior in real multi-window environments, tightening busy/ready detection, and building the integration/performance testing harness.
 
 ### Implementation Progress
 
@@ -92,7 +95,7 @@ Async is only needed if you introduce continuous telemetry or parallel long-late
 
 **Mocked tests are worthless** for a desktop automation system. It's like testing a parachute without jumping.
 
-### Required Integration Test Scenarios
+### Required Integration Test Scenarios (Sprint 2)
 
 1. **End-to-end VS Code interaction** - Full Copilot Chat cycle with real windows
 2. **Multi-window orchestration** - Correct window selection from 3+ instances
@@ -101,6 +104,8 @@ Async is only needed if you introduce continuous telemetry or parallel long-late
 5. **LLM reasoning validation** - Complex plans with priority-based selection
 6. **Watchdog resumption** - Automatic restart after interruption
 7. **Stdio MCP adapter** - Launch Windows-MCP subprocess, verify JSON-RPC communication, confirm tool calls work
+
+These scenarios must also respect the Sprint 2 monitor success criteria in `docs/plans/Sprint2.md` (correct VS Code window detection, per-window independence, accurate busy/ready, validated Copilot text/transcripts, and screenshot capture during live tests).
 
 ### Performance Benchmarks (Real-World Required)
 - Window focus: <500ms

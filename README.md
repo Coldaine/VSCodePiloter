@@ -12,9 +12,12 @@
 
 ---
 
-## Canonical Architecture
+## Canonical Architecture & Sprints
 
 The authoritative system design is documented in `ARCHITECTURE.md` (Canonical Architecture, Nov 2025). Older documents like `CLAUDE.md` and `PILLARS.md` remain for context but defer to `ARCHITECTURE.md` for source of truth on flow and decisions.
+
+- **Sprint 1** (completed): wired in Z.ai GLM-4.6/4.5V, secret management, the canonical LangGraph flow, and initial Recovery + VSCodeCopilotMonitor integration. Variances from the original sprint plan and deferred items are captured in `docs/plans/Sprint1.md`.
+- **Sprint 2** (current/next): hardens the VSCodeCopilotMonitor against real multi-window setups, formalizes the live monitor success criteria (per-window state, correct VS Code window detection, accurate busy/ready, validated Copilot text/transcripts), and builds the integration/performance testing harness originally sketched for Sprint 1.
 
 ## Quick Start
 

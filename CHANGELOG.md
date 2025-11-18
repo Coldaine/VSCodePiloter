@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.github/copilot-instructions.md` - Project-specific AI coding agent instructions
 - **Pre-commit hooks** (`.pre-commit-config.yaml`) with ruff lint/format and basic hygiene hooks
 - **Testing framework**: pytest markers (unit/integration/acceptance), env-gated skips, coverage config, and `tests/conftest.py`
+ - **Monitor success criteria**: documented expectations for VSCodeCopilotMonitor (correct VS Code window detection, per-window state, accurate busy/ready, validated Copilot text and transcripts, and screenshot capture during live tests)
 
 ### Changed
 - **Default MCP Server** - Changed from HTTP-based custom server to Windows-MCP via stdio (npx fallback)
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Config Schema** - Updated `config.yaml` to support stdio/http transport selection
 - **README.md** - Clarified MCP requirements, removed HTTP endpoint instructions, added Windows-MCP integration
 - **ARCHITECTURE.md** - Updated adapter descriptions, marked Recovery node as implemented, added MCP stdio transport section
+ - **Sprint planning** - Marked Sprint 1 as completed, moved remaining integration and performance work (including live monitor success criteria enforcement) into Sprint 2
 - **PILLARS.md** - Updated Pillar 3 and Pillar 7 to reflect stdio transport and VSCodeCopilotMonitor
 
 ### Removed
