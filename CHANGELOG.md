@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Default MCP Server** - Changed from HTTP-based custom server to Windows-MCP via stdio (npx fallback)
-- **MCP Adapter Selection** - Now auto-detects from Claude Desktop config, falls back to `npx -y @curtsortouch/windows-mcp`
+- **MCP Adapter Selection** - Now auto-detects from Claude Desktop config, falls back to `npx -y @CursorTouch/windows-mcp`
 - **Config Schema** - Updated `config.yaml` to support stdio/http transport selection
 - **README.md** - Clarified MCP requirements, removed HTTP endpoint instructions, added Windows-MCP integration
 - **ARCHITECTURE.md** - Updated adapter descriptions, marked Recovery node as implemented, added MCP stdio transport section

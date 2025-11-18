@@ -70,9 +70,10 @@ echo -e "${GREEN}✓ Successfully retrieved Z.ai API key!${NC}"
 echo -e "${GREEN}✓ ZAI_API_KEY environment variable set for current session${NC}"
 echo ""
 echo -e "${YELLOW}To make this permanent, add to your ~/.bashrc or ~/.zshrc:${NC}"
-echo -e "${CYAN}  export ZAI_API_KEY='$API_KEY'${NC}"
+echo -e "${CYAN}  export ZAI_API_KEY='<your-api-key>'${NC}"
+echo -e "${GRAY}  (Retrieve the current value with: printenv ZAI_API_KEY)${NC}"
 echo ""
-echo -e "${YELLOW}To verify, run:${NC}"
+echo -e "${YELLOW}To verify in this shell, run:${NC}"
 echo -e "${CYAN}  echo \$ZAI_API_KEY${NC}"
 
 # Show key preview (first 8 characters only for security)

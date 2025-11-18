@@ -23,7 +23,7 @@ The authoritative system design is documented in `ARCHITECTURE.md` (Canonical Ar
 - Git + GitHub CLI (`gh`) installed and on PATH
 - A Windows desktop automation **MCP server** (Windows-MCP recommended)
   - If you have Claude Desktop installed, the system will automatically use MCP servers from its config
-  - Otherwise, it will use `npx -y @curtsortouch/windows-mcp` as a fallback
+  - Otherwise, it will use `npx -y @CursorTouch/windows-mcp` as a fallback
   - Or configure your own in `config/config.yaml` under `adapters.mcp`
 
 > **Note**: This repo uses stdio transport (standard MCP protocol) by default. An optional **local fallback** using `pyautogui` exists (set `adapters.type: "fallback"`).

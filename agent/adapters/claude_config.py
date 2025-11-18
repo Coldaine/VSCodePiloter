@@ -103,6 +103,6 @@ def get_default_mcp_server_config() -> Dict[str, Any]:
     return {
         'name': 'windows-mcp-fallback',
         'command': 'npx',
-        'args': ['-y', '@curtsortouch/windows-mcp'],
+        'args': ['-y', '@CursorTouch/windows-mcp'],
         'env': {}
     }
