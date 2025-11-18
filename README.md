@@ -12,6 +12,13 @@
 
 ---
 
+## Canonical Architecture & Sprints
+
+The authoritative system design is documented in `ARCHITECTURE.md` (Canonical Architecture, Nov 2025). Older documents like `CLAUDE.md` and `PILLARS.md` remain for context but defer to `ARCHITECTURE.md` for source of truth on flow and decisions.
+
+- **Sprint 1** (completed): wired in Z.ai GLM-4.6/4.5V, secret management, the canonical LangGraph flow, and initial Recovery + VSCodeCopilotMonitor integration. Variances from the original sprint plan and deferred items are captured in `docs/plans/Sprint1.md`.
+- **Sprint 2** (current/next): hardens the VSCodeCopilotMonitor against real multi-window setups, formalizes the live monitor success criteria (per-window state, correct VS Code window detection, accurate busy/ready, validated Copilot text/transcripts), and builds the integration/performance testing harness originally sketched for Sprint 1.
+
 ## Quick Start
 
 ### 1) Requirements
@@ -19,7 +26,7 @@
 - Git + GitHub CLI (`gh`) installed and on PATH
 - A Windows desktop automation **MCP server** (Windows-MCP recommended)
   - If you have Claude Desktop installed, the system will automatically use MCP servers from its config
-  - Otherwise, it will use `npx -y @curtsortouch/windows-mcp` as a fallback
+  - Otherwise, it will use `npx -y @CursorTouch/windows-mcp` as a fallback
   - Or configure your own in `config/config.yaml` under `adapters.mcp`
 
 > **Note**: This repo uses stdio transport (standard MCP protocol) by default. An optional **local fallback** using `pyautogui` exists (set `adapters.type: "fallback"`).

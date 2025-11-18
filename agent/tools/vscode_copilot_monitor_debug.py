@@ -1,14 +1,7 @@
-"""VS Code Copilot Chat monitor for Windows-MCP sessions.
+"""VS Code Copilot Chat monitor with extensive debug logging.
 
-This module exposes :class:`VSCodeCopilotMonitor`, a small utility that
-drives the Windows-MCP tools exposed by the CursorTouch/Windows-MCP
-project.  It scans every open VS Code window, captures the Copilot Chat
-text, fetches the transcript via "Copy All", and reports diffs so that
-agents can reason about activity across windows.
-
-The implementation mirrors the reference snippet provided by the user but
-adds a few guardrails so it can be imported and unit-tested without a
-live MCP server.
+This is a heavily instrumented version of vscode_copilot_monitor.py
+with detailed logging at every step for debugging Windows-MCP integration issues.
 """
 
 from __future__ import annotations
@@ -36,7 +29,7 @@ logger.setLevel(logging.DEBUG)
 file_handler = logging.FileHandler(log_file, encoding='utf-8')
 file_handler.setLevel(logging.DEBUG)
 file_formatter = logging.Formatter(
-    '%(asctime)s.%(msecs)03d | %(levelname)-8s | %(funcName)-20s | %(message)s',
+    '%(asctime)s.%(msecs)03d | %(levelname)-8s | %(funcName)-20s | L%(lineno)4d | %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 file_handler.setFormatter(file_formatter)
@@ -130,7 +123,7 @@ def parse_state_tool_text(text: str) -> Dict[str, Any]:
                         'y': 0,
                     })
                 except (ValueError, IndexError) as e:
-                    logger.debug(f"Failed to parse window line: '{stripped}'. Error: {e}")
+                    logger.debug(f"Failed to parse window line: '{stripped}' with error: {e}")
         
         # Parse interactive elements (Name + Coordinates columns)
         elif in_interactive_section:
@@ -161,7 +154,7 @@ def parse_state_tool_text(text: str) -> Dict[str, Any]:
                             'y': y,
                         })
                 except (ValueError, IndexError) as e:
-                    logger.debug(f"Failed to parse interactive element line: '{stripped}'. Error: {e}")
+                    logger.debug(f"Failed to parse interactive element line: '{stripped}'. Exception: {e}")
     
     return result
 
@@ -177,7 +170,6 @@ class VSCodeCopilotMonitor:
         args: Optional[List[str]] = None,
         busy_diff_threshold: int = 100,
     ):
-        # Resolve MCP path from env or default to user home if not provided
         resolved_path = windows_mcp_path or os.environ.get("WINDOWS_MCP_PATH") or str(Path.home() / "Windows-MCP")
         self.windows_mcp_path = resolved_path
         self.command = command
@@ -266,19 +258,12 @@ class VSCodeCopilotMonitor:
 
         for attempt in range(retries):
             try:
-                # State-Tool may return JSON or plain text
+                # State-Tool returns plain text, not JSON
                 result = await self.win_session.call_tool("State-Tool", {})
                 text = self._extract_text(result)
                 if not text:
                     return {}
-                # First, try JSON
-                try:
-                    parsed = json.loads(text)
-                    if isinstance(parsed, dict):
-                        return parsed
-                except Exception:
-                    pass
-                # Fallback: parse structured plain text
+                # Parse the structured text format
                 return parse_state_tool_text(text)
             except Exception as exc:
                 if attempt == retries - 1:

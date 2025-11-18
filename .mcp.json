@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "windows-mcp": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "--directory",
+        "C:/Users/pmacl/Windows-MCP",
+        "run",
+        "main.py"
+      ],
+      "env": {}
+    }
+  }
+}
