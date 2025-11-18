@@ -170,21 +170,72 @@ Edit `config/config.yaml` and set your repos directory:
 repos_root: "C:\\your\\repos\\directory"  # Windows path with escaped backslashes
 ```
 
-### 5. MCP Server Setup (Optional)
+### 5. Windows-MCP Setup
 
-For desktop automation, you can either:
+VSCodePiloter uses **Windows-MCP** for desktop automation via stdio communication.
 
-**Option A: Use MCP Server** (Recommended for production)
-- Set up an MCP server running on `http://127.0.0.1:43110`
-- See [MCP documentation](https://modelcontextprotocol.io) for server setup
+**Automatic Configuration (Recommended):**
 
-**Option B: Use Fallback Adapter** (For testing)
-- Install fallback dependencies: `pip install -e .[fallback]`
-- Change `config/config.yaml`:
-  ```yaml
-  adapters:
-    type: "fallback"  # Changed from "mcp"
-  ```
+The system automatically uses Windows-MCP via npx if available:
+
+```bash
+# The system will automatically run:
+# npx -y @curtsortouch/windows-mcp
+# No manual setup required!
+```
+
+**Manual Verification:**
+
+Test Windows-MCP is available:
+
+```bash
+# Check npx is installed (comes with Node.js)
+npx --version
+
+# Test Windows-MCP
+npx -y @curtsortouch/windows-mcp
+```
+
+**Configuration Options:**
+
+The default configuration in `config/config.yaml` uses stdio transport:
+
+```yaml
+adapters:
+  type: "mcp"  # MCP adapter with stdio
+  mcp:
+    transport: "stdio"  # Recommended: stdio communication
+    # Optional: Override auto-detection
+    # command: "npx"
+    # args: ["-y", "@curtsortouch/windows-mcp"]
+```
+
+**Alternative: Legacy HTTP Mode**
+
+If you have an MCP HTTP server running:
+
+```yaml
+adapters:
+  type: "mcp"
+  mcp:
+    transport: "http"  # Use HTTP instead of stdio
+    base_url: "http://127.0.0.1:43110"
+    jsonrpc: false
+```
+
+**Fallback Adapter (Testing Only):**
+
+For testing without MCP:
+
+```bash
+pip install -e .[fallback]
+```
+
+Edit `config/config.yaml`:
+```yaml
+adapters:
+  type: "fallback"  # Use pyautogui
+```
 
 ### 6. Initialize State Directory
 
@@ -335,9 +386,12 @@ Z.ai Coding Plan provides free API calls. Monitor your usage at: [https://z.ai/d
 - Verify `ZAI_API_KEY` environment variable is set
 - Restart your terminal/IDE to pick up new environment variables
 
-**"Connection refused" for MCP:**
-- Check MCP server is running on `http://127.0.0.1:43110`
-- Or switch to fallback adapter in config
+**"Windows-MCP connection error":**
+- Verify npx is installed: `npx --version`
+- Install Node.js if needed: https://nodejs.org/
+- Test Windows-MCP manually: `npx -y @curtsortouch/windows-mcp`
+- Check stdio transport is configured in `config/config.yaml`
+- Or switch to fallback adapter for testing
 
 **"No work items available":**
 - Verify `repos_root` points to directory containing git repositories
@@ -382,11 +436,40 @@ The **Vision Actor** can:
 - Verify window focus and content
 - Provide feedback for error recovery
 
+## Testing
+
+### Run Tests
+
+```bash
+# Run all unit tests
+pytest tests/ -v
+
+# Run integration tests (requires API key)
+pytest tests/integration/ -v -m integration
+
+# Run performance benchmarks
+pytest tests/benchmarks/ -v -m benchmark
+
+# Run with coverage
+pytest --cov=agent --cov-report=html tests/
+```
+
+### Test Requirements
+
+- **Unit tests**: No special requirements
+- **Integration tests**: Require `ZAI_API_KEY` environment variable
+- **VS Code tests**: Require VS Code running and Windows-MCP available
+- **Benchmarks**: Require API key and optionally VS Code
+
+See [docs/testing.md](docs/testing.md) for comprehensive testing guide.
+
 ## Next Steps
 
 - Review [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed system design
 - Check [PILLARS.md](./PILLARS.md) for core requirements
 - Read [README.md](./README.md) for project overview
+- See [docs/testing.md](docs/testing.md) for testing procedures
+- Review [docs/performance.md](docs/performance.md) for performance benchmarks
 - See `state/episodes/` for execution traces
 
 ## Security

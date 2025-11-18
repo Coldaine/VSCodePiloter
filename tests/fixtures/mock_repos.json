@@ -1,0 +1,26 @@
+{
+  "high_priority_repo": {
+    "path": "/path/to/high_priority_repo",
+    "current_branch": "main",
+    "prs": [
+      {"number": 101, "title": "Critical bug fix"},
+      {"number": 102, "title": "Feature implementation"},
+      {"number": 103, "title": "Refactoring"}
+    ],
+    "last_commit_date": "2025-11-18T10:00:00Z"
+  },
+  "stale_repo": {
+    "path": "/path/to/stale_repo",
+    "current_branch": "develop",
+    "prs": [],
+    "last_commit_date": "2025-11-15T10:00:00Z"
+  },
+  "normal_repo": {
+    "path": "/path/to/normal_repo",
+    "current_branch": "main",
+    "prs": [
+      {"number": 201, "title": "Documentation update"}
+    ],
+    "last_commit_date": "2025-11-17T10:00:00Z"
+  }
+}
