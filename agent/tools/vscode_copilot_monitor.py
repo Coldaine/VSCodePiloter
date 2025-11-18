@@ -129,8 +129,8 @@ def parse_state_tool_text(text: str) -> Dict[str, Any]:
                         'x': 0,
                         'y': 0,
                     })
-                except (ValueError, IndexError):
-                    pass
+                except (ValueError, IndexError) as e:
+                    logger.debug(f"Failed to parse window line: '{stripped}'. Error: {e}")
         
         # Parse interactive elements (Name + Coordinates columns)
         elif in_interactive_section:
@@ -160,8 +160,8 @@ def parse_state_tool_text(text: str) -> Dict[str, Any]:
                             'x': x,
                             'y': y,
                         })
-                except (ValueError, IndexError):
-                    pass
+                except (ValueError, IndexError) as e:
+                    logger.debug(f"Failed to parse interactive element line: '{stripped}'. Error: {e}")
     
     return result
 
@@ -171,17 +171,19 @@ class VSCodeCopilotMonitor:
 
     def __init__(
         self,
-        windows_mcp_path: str = "C:/Users/pmacl/Windows-MCP",
+        windows_mcp_path: Optional[str] = None,
         *,
         command: str = "uv",
         args: Optional[List[str]] = None,
         busy_diff_threshold: int = 100,
     ):
-        self.windows_mcp_path = windows_mcp_path
+        # Resolve MCP path from env or default to user home if not provided
+        resolved_path = windows_mcp_path or os.environ.get("WINDOWS_MCP_PATH") or str(Path.home() / "Windows-MCP")
+        self.windows_mcp_path = resolved_path
         self.command = command
         self.command_args = list(args) if args is not None else [
             "--directory",
-            windows_mcp_path,
+            resolved_path,
             "run",
             "main.py",
         ]
@@ -379,8 +381,13 @@ class VSCodeCopilotMonitor:
             return
 
         try:
-            x = int(window.get("x", 0)) + 50
-            y = int(window.get("y", 0)) + 15
+            win_x = int(window.get("x", 0))
+            win_y = int(window.get("y", 0))
+            if win_x == 0 and win_y == 0:
+                logger.warning("Skipping focus: window coordinates unknown (x=y=0) in fallback state parse")
+                return
+            x = win_x + 50
+            y = win_y + 15
             await self.win_session.call_tool(
                 "Click-Tool",
                 {"loc": [x, y], "button": "left"},
@@ -397,6 +404,11 @@ class VSCodeCopilotMonitor:
         window_y = float(window.get("y", 0) or 0)
         window_width = float(window.get("width", 0) or 0)
         window_height = float(window.get("height", 0) or 0)
+
+        # If coordinates are unknown (fallback parse), avoid misclassification
+        if (window_x == 0 and window_y == 0) or window_width == 0 or window_height == 0:
+            logger.warning("Skipping copilot text extraction: window bounds unknown from fallback parse")
+            return ""
 
         window_right = window_x + window_width
         chat_area_left = window_right - (window_width * 0.4)
@@ -562,7 +574,7 @@ class VSCodeCopilotMonitor:
 async def main() -> List[Dict[str, Any]]:
     """CLI entry point for manual experimentation."""
 
-    windows_mcp_path = os.environ.get("WINDOWS_MCP_PATH", "C:/Users/pmacl/Windows-MCP")
+    windows_mcp_path = os.environ.get("WINDOWS_MCP_PATH") or str(Path.home() / "Windows-MCP")
     monitor = VSCodeCopilotMonitor(windows_mcp_path)
     results = await monitor.connect()
     print(f"\n{'=' * 70}")

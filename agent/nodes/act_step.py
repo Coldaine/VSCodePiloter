@@ -1,11 +1,12 @@
 
 from __future__ import annotations
-import os, re, base64, time, logging, asyncio
+import base64, time, logging, asyncio
 from typing import Dict, Any, Optional, List
 from agent.observability import span, log_event
 from agent.adapters.base import DesktopAdapter
 from agent.llm_client import create_vision_llm, create_vision_message
 from agent.tools.vscode_copilot_monitor import VSCodeCopilotMonitor
+from agent.secrets.factory import SecretProviderFactory
 
 logger = logging.getLogger(__name__)
 
@@ -16,9 +17,16 @@ def _verify_with_vision(screenshot_b64: str, state: Dict[str, Any], question: st
         return {"enabled": False}
     
     try:
+        secret_provider = state.get("_secret_provider")
+        if not secret_provider:
+            try:
+                secret_provider = SecretProviderFactory.from_env()
+            except Exception:
+                secret_provider = None
+
         vision_llm = create_vision_llm(
             config=settings.llm,
-            secret_provider=True
+            secret_provider=secret_provider
         )
         msg = create_vision_message(
             text=question,
@@ -32,7 +40,7 @@ def _verify_with_vision(screenshot_b64: str, state: Dict[str, Any], question: st
             "enabled": True,
             "success": True,
             "content": content,
-            "model": settings.llm.vision_model
+            "model": getattr(settings.llm, "vision_model", None) or getattr(settings.llm.vision, "model", None)
         }
     except Exception as e:
         logger.error(f"Vision verification failed: {e}", exc_info=True)
@@ -133,8 +141,16 @@ def act_step(state: Dict[str, Any]) -> Dict[str, Any]:
         monitor_error = None
         try:
             monitor = VSCodeCopilotMonitor()
-            # Run the async monitor in a short-lived loop (ActStep remains sync)
-            results: List[Dict[str, Any]] = asyncio.run(monitor.connect())
+            # Run the async monitor safely from a synchronous context
+            try:
+                results: List[Dict[str, Any]] = asyncio.run(monitor.connect())
+            except RuntimeError:
+                # Fallback for environments with an already running loop
+                loop = asyncio.new_event_loop()
+                try:
+                    results = loop.run_until_complete(monitor.connect())
+                finally:
+                    loop.close()
 
             # Pick the result matching our focused window title or containing repo path
             target_title = (win.get("title") or "").lower()

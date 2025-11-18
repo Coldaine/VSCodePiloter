@@ -30,7 +30,7 @@ async def test_monitor():
     print()
 
     # Check environment
-    windows_mcp_path = os.environ.get("WINDOWS_MCP_PATH", "C:/Users/pmacl/Windows-MCP")
+    windows_mcp_path = os.environ.get("WINDOWS_MCP_PATH") or str(Path.home() / "Windows-MCP")
 
     print(f"Windows-MCP Path: {windows_mcp_path}")
 
