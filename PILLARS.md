@@ -1,5 +1,6 @@
-
 # Product Pillars (Locked-In Requirements)
+
+> Canonical flow and decision points live in `ARCHITECTURE.md` (Nov 2025). Pillars remain stable, but defer to that document for current implementation choices (e.g., synchronous ActStep + monitor).
 
 ## Pillar 1 — LangGraph Multi-Agent Architecture
 Reasoner + Vision Actor operating inside a resilient LangGraph workflow with checkpointing.
@@ -8,7 +9,7 @@ Reasoner + Vision Actor operating inside a resilient LangGraph workflow with che
 System wakes every ~30 minutes, checks heartbeat, and automatically restarts or recovers.
 
 ## Pillar 3 — Desktop Control via MCP
-All OS and VS Code actions driven through MCP servers (list windows, focus, screenshot, input).
+All OS and VS Code actions driven through MCP servers using stdio transport (standard MCP protocol). Supports Windows-MCP and other stdio-based MCP servers.
 
 ## Pillar 4 — Multi-VS Code Window Awareness
 Actor must reliably discover, focus, and verify correct VS Code windows tied to specific repos.
@@ -20,7 +21,7 @@ Open, focus, detect busy state, copy transcript, post messages, verify via scree
 Scan repos directory, derive long-term plan, maintain world state, drive Copilot alignment.
 
 ## Pillar 7 — Minimal Custom Tooling
-Prefer reuse of existing MCP servers; only thin adapters provided.
+Prefer reuse of existing MCP servers; only thin adapters and high-level wrappers (StdioMCPAdapter, VSCodeCopilotMonitor) provided.
 
 ## Pillar 8 — Flexible Reasoner ↔ Actor Interface
 TaskEnvelope and ActionReport allow arbitrary metadata, screenshots, state, hints.

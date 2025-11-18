@@ -56,10 +56,11 @@ try {
     Write-Host "✓ ZAI_API_KEY environment variable set for current session" -ForegroundColor Green
     Write-Host ""
     Write-Host "To make this permanent, run:" -ForegroundColor Yellow
-    Write-Host "  [System.Environment]::SetEnvironmentVariable('ZAI_API_KEY', '$apiKey', 'User')" -ForegroundColor Cyan
+    Write-Host "  [System.Environment]::SetEnvironmentVariable('ZAI_API_KEY', '<your-api-key>', 'User')" -ForegroundColor Cyan
+    Write-Host "  # Retrieve the current value with: Write-Host `$env:ZAI_API_KEY" -ForegroundColor DarkGray
     Write-Host ""
-    Write-Host "To verify, run:" -ForegroundColor Yellow
-    Write-Host "  echo `$env:ZAI_API_KEY" -ForegroundColor Cyan
+    Write-Host "To verify in this session, run:" -ForegroundColor Yellow
+    Write-Host '  Write-Host $env:ZAI_API_KEY' -ForegroundColor Cyan
 
     # Verify the API key works (first few characters only for security)
     $keyPreview = $apiKey.Substring(0, [Math]::Min(8, $apiKey.Length)) + "..."

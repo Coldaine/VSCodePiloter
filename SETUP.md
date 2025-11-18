@@ -274,6 +274,39 @@ tasks:
 
 ## Usage
 
+### Developer Workflow: Tests & Hooks
+
+Install dev tools and enable hooks:
+
+```powershell
+# In venv
+pip install -e .[dev]
+pre-commit install
+```
+
+Run tests by category:
+
+```powershell
+# Unit-only (default marks)
+pytest -m unit
+
+# Integration (set env to enable)
+$env:RUN_INTEGRATION=1; pytest -m integration; Remove-Item Env:RUN_INTEGRATION
+
+# Acceptance (real MCP + VS Code windows + LLM)
+$env:RUN_ACCEPTANCE=1; pytest -m acceptance -s -vv; Remove-Item Env:RUN_ACCEPTANCE
+
+# Coverage (unit baseline)
+pytest -m unit --cov=agent --cov-report=term-missing
+```
+
+Formatting & linting (pre-commit runs these automatically):
+
+```powershell
+ruff format .
+ruff check . --fix
+```
+
 ### Test Configuration
 
 Scan repositories and validate configuration:

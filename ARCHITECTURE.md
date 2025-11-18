@@ -1,6 +1,45 @@
+# Canonical Architecture (Nov 2025)
+
+This is the primary, guiding document for how the system runs. It establishes the canonical flow and clarifies that ActStep (x-step) operates synchronously, invoking the VSCodeCopilotMonitor once per cycle. Async is optional and not required for correctness.
+
+## Core Principles
+- Synchronous ActStep: one monitor/tool pass per LangGraph cycle; deterministic ordering and simpler debugging.
+- Propose → Verify → Execute: preserve the two-phase guardrail around any desktop action.
+- Reuse-first: use Windows-MCP via stdio and the `VSCodeCopilotMonitor` to harvest transcript and detect busy state.
+- Vision-gated validation: post-action screenshot goes to `glm-4.5v`; failure routes to Recovery with bounded retries.
+
+## End-to-End Flow (ASCII)
+
+```
+Start → SCAN_REPOS → SYNC_PLAN → REASON_STEP
+       → ACT_STEP (Sync, uses VSCodeCopilotMonitor)
+       → VALIDATE_EVIDENCE (Vision + structure)
+         ├─ Success → PERSIST → End/Next Cycle
+         └─ Failure → RECOVERY → (retry or end)
+```
+
+Detailed ACT_STEP (synchronous):
+- Invoke `VSCodeCopilotMonitor`:
+  - Enumerate VS Code windows (State-Tool)
+  - Focus target window
+  - Open Copilot Chat (palette)
+  - Copy-All transcript (Clipboard-Tool)
+- Pre-verify (optional): quick vision/state sanity check
+- Decide action (from ReasonStep + transcript)
+- Execute nudge (write-mode gated)
+- Capture screenshot (after)
+- Emit artifacts: transcript, before/after screenshots
+
+Async is only needed if you introduce continuous telemetry or parallel long-latency tasks. For the current product goals, keep it sync.
+
+---
+
 # System Architecture Documentation
 
-## System Status: Sprint 1 - LLM Integration Complete ✅
+## System Status
+
+- **Sprint 1 (Completed)**: LLM integration, secret management, canonical LangGraph flow, vision-gated validation, and initial Recovery wiring.
+- **Sprint 2 (Planned/In Progress)**: Hardening VSCodeCopilotMonitor behavior in real multi-window environments, tightening busy/ready detection, and building the integration/performance testing harness.
 
 ### Implementation Progress
 
@@ -10,9 +49,9 @@
 | **Reasoner Agent** | ✅ Implemented | GLM-4.6-powered intelligent task prioritization |
 | **Vision Capabilities** | ✅ Implemented | GLM-4.5V for screenshot analysis and validation |
 | **Secret Management** | ✅ Implemented | Bitwarden Secrets Manager + environment variable fallback |
-| **Recovery Node** | ⚠️ Pending | Defined but not wired into graph flow |
+| **Recovery Node** | ✅ Implemented | Wired into graph flow with conditional routing from ActStep |
 | **Retry Logic** | ⚠️ Pending | No retry mechanism in MCP adapter |
-| **Screenshot Validation** | ⚠️ Pending | Vision model available but not integrated in validation |
+| **Screenshot Validation** | ✅ Implemented | Vision integrated in ValidateEvidence; routes to Recovery on failure |
 
 ### LLM Architecture
 
@@ -56,7 +95,7 @@
 
 **Mocked tests are worthless** for a desktop automation system. It's like testing a parachute without jumping.
 
-### Required Integration Test Scenarios
+### Required Integration Test Scenarios (Sprint 2)
 
 1. **End-to-end VS Code interaction** - Full Copilot Chat cycle with real windows
 2. **Multi-window orchestration** - Correct window selection from 3+ instances
@@ -65,6 +104,8 @@
 5. **LLM reasoning validation** - Complex plans with priority-based selection
 6. **Watchdog resumption** - Automatic restart after interruption
 7. **Stdio MCP adapter** - Launch Windows-MCP subprocess, verify JSON-RPC communication, confirm tool calls work
+
+These scenarios must also respect the Sprint 2 monitor success criteria in `docs/plans/Sprint2.md` (correct VS Code window detection, per-window independence, accurate busy/ready, validated Copilot text/transcripts, and screenshot capture during live tests).
 
 ### Performance Benchmarks (Real-World Required)
 - Window focus: <500ms
@@ -125,16 +166,25 @@ This system implements a multi-agent LangGraph orchestration for supervising, dr
 - **Fallback chain**: Bitwarden → .env → environment variables
 - **Caching**: LRU cache for secret lookups
 
+### ✅ 4. MCP Stdio Transport
+- **StdioMCPAdapter**: Launches MCP servers as subprocesses
+- **Standard protocol**: JSON-RPC over stdin/stdout
+- **Claude Desktop integration**: Auto-detects MCP servers from Claude config
+- **Fallback**: Uses Windows-MCP via npx if no config found
+- **VSCodeCopilotMonitor**: High-level wrapper for VS Code Copilot monitoring
+
 ## Remaining Gaps (Sprint 2+)
 
-### ⚠️ 1. Vision Integration in Validation
-- **Vision model not used yet**: GLM-4.5V available but `validate_evidence.py` doesn't call it
-- **Screenshot analysis needed**: Should verify Copilot Chat state visually
-- **State detection**: Can't confirm if actions succeeded without vision validation
+### ✅ 1. Vision-Guided Validation (Completed Nov 2025)
+- **GLM-4.5V integration**: Vision model analyzes post-action screenshots
+- **Smart failure detection**: Parses vision responses for error keywords, busy indicators, closed chat
+- **Auto-recovery routing**: Failed validations trigger Recovery node (max 2 retries)
+- **Pre-action checks**: ActStep uses vision to verify Copilot Chat state before actions
+- **Decision keywords**: "error", "busy", "not open" → fail; "chat is open", "ready" → pass
 
-### ⚠️ 2. Error Recovery (Currently Orphaned)
-- **Recovery node disconnected**: Exists but has no edges from other nodes
-- **No retry logic**: Failures just log warnings and continue
+### ⚠️ 2. Error Recovery (Partially Implemented)
+- **Recovery node wired**: Connected with conditional routing from ActStep
+- **No retry logic in adapter**: MCP adapter failures abort immediately
 - **No circuit breakers**: Will keep failing on same error
 - **No graceful degradation**: All-or-nothing execution
 

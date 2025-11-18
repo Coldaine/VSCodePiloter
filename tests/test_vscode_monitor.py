@@ -27,7 +27,7 @@ class _FakeSession:
                 raise RuntimeError("No more states queued")
             state = self.states.pop(0)
             return _FakeResponse(json.dumps(state))
-        if name == "Clipboard-Tool":
+        if name == "Powershell-Tool":
             return _FakeResponse(self.transcript_text)
         if name == "Click-Tool":
             return _FakeResponse("")

@@ -1,10 +1,14 @@
 # CLAUDE.md
 
+> Note: As of Nov 2025, `ARCHITECTURE.md` is the primary guiding document for system flow and decisions. This file remains to describe the sprint workflow and contributor guidance for Claude instances.
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
 VSCodePiloter is a LangGraph-based multi-agent system that orchestrates GitHub Copilot Chat across multiple VS Code windows on Windows 11. It uses a Reasoner agent (powered by Z.ai GLM-4.6) and a Vision Actor to periodically monitor repositories, analyze PR status, and nudge Copilot Chat with contextual information.
+
+**MCP Integration**: Uses stdio transport (standard MCP protocol) to communicate with Windows-MCP or other MCP servers. Auto-detects from Claude Desktop config or falls back to npx.
 
 ## 🚨 CRITICAL: Sprint-Based Workflow
 
